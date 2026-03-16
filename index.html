@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1244,7 +1244,12 @@ function buildShareText() {
 `;
   text += `━━━━━━━━━━━━━━━━━━━━
 `;
-  text += `${sorted.map(([, p], i) => `${ranks[i] || `${i+1}.`} ${p.avatar || ''} ${p.name}: ${p.totalScore} pts`).join('
+  // Fix: avoid nested template literals (iOS Safari compat)
+  const scoreLines = sorted.map(([, p], i) => {
+    const rank = ranks[i] || (i+1)+'.';
+    return rank + ' ' + (p.avatar || '') + ' ' + p.name + ': ' + p.totalScore + ' pts';
+  }).join('\n');
+  text += scoreLines + '\n';
 ')}
 `;
   text += `━━━━━━━━━━━━━━━━━━━━
