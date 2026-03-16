@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wheel of Misfortune — Host</title>
+<title>Wheel of Misfortune  --  Host</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -354,7 +354,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <div id="voteOptions"></div>
     <div style="font-size:11px;color:var(--muted);margin-top:8px;" id="voteStatusText">Waiting for votes...</div>
     <div class="btn-row" style="margin-top:10px;">
-      <button class="btn btn-gold btn-sm" id="lockVoteBtn" onclick="lockCategoryVote()">Lock In Winner →</button>
+      <button class="btn btn-gold btn-sm" id="lockVoteBtn" onclick="lockCategoryVote()">Lock In Winner -></button>
       <button class="btn btn-ghost btn-sm" onclick="cancelCategoryVote()">Cancel</button>
     </div>
   </div>
@@ -363,7 +363,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   <div class="panel" id="lobbyLaunchCard" style="margin-bottom:12px;">
     <div class="ptitle">Lobby Controls</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Wait for all players, enter the first puzzle in the left panel, then launch.</p>
-    <button class="btn btn-gold" onclick="launchGame()" id="btnLaunch" disabled>Launch Game →</button>
+    <button class="btn btn-gold" onclick="launchGame()" id="btnLaunch" disabled>Launch Game -></button>
   </div>
 
   <!-- Board (#6 host always sees letters) -->
@@ -434,7 +434,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Spin sets the base value for all consonants. Players each get ONE guess and 3 seconds to solve.</p>
     <div class="btn-row">
       <button class="btn btn-gold btn-sm" onclick="hostSpin()">Spin for Base Value</button>
-      <button class="btn btn-ghost btn-sm" onclick="speedUpNextPlayer()">Next Player →</button>
+      <button class="btn btn-ghost btn-sm" onclick="speedUpNextPlayer()">Next Player -></button>
     </div>
     <div style="font-size:12px;color:var(--amber);margin-top:6px;" id="speedupStatusText"></div>
   </div>
@@ -551,7 +551,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-const app = initializeApp(FIREBASE_CONFIG);
+const app = initializeApp(window.FIREBASE_CONFIG);
 const db = getDatabase(app);
 
 // Stars
@@ -653,7 +653,7 @@ const DEFAULT_CATEGORIES = [
   'Around The House','In The Workplace','What Are You Doing?',
   'Event','Fictional Character','Landmark','Slang'
 ];
-// Mutable pool — host can add/remove
+// Mutable pool  --  host can add/remove
 let ALL_CATEGORIES = [...DEFAULT_CATEGORIES];
 let voteCountdownTimer = null;
 
@@ -703,7 +703,7 @@ window.startCategoryVote = async function() {
   document.getElementById('categoryVotePanel').classList.remove('hidden');
   const cpEl = document.getElementById('catPoolCount');
   if (cpEl) cpEl.textContent = `${ALL_CATEGORIES.length} categories in pool`;
-  setAnnounce('Category Vote!', 'Players are voting on the next round's category — 30 seconds!');
+  setAnnounce('Category Vote!', 'Players are voting on the next round's category  --  30 seconds!');
   addLog('📊 Category vote started');
   // 30s countdown
   let secs = 30;
@@ -768,7 +768,7 @@ function renderCategoryVote(g) {
     </div>`;
   }).join('');
   document.getElementById('voteStatusText').textContent =
-    `${totalVotes} / ${playerCount} voted${totalVotes === playerCount ? ' — all in!' : ''}`;
+    `${totalVotes} / ${playerCount} voted${totalVotes === playerCount ? '  --  all in!' : ''}`;
 }
 
 window.hostSpin=function(){
@@ -794,14 +794,14 @@ async function handleSpinResult(wedge){
 
   if(typeof val==='number'){
     valEl.textContent=`${val} PTS`;valEl.style.color='var(--gold)';subEl.textContent=`${player.name} picks a consonant!`;
-    setAnnounce(`${player.name} spins ${val} points!`,`${player.name} — name a consonant!`);
+    setAnnounce(`${player.name} spins ${val} points!`,`${player.name}  --  name a consonant!`);
     addLog(`🎡 ${player.name} spun ${val} pts`);
     await update(ref(db,`games/${gameId}`),{currentSpinValue:val,turnPhase:'guess_consonant',spinRequested:null,spinRequestBy:null});
   } else if(val==='bankrupt'){
     valEl.textContent='BANKRUPT 💀';valEl.style.color='var(--red)';subEl.textContent='Lose all round points!';
     setAnnounce(`BANKRUPT! ${player.name} loses their round points! 💀`,'Turn ends. They must CHUG!');
     addLog(`💀 ${player.name} BANKRUPT`);playBankrupt();
-    await sendDrinkInternal('chug',turnId,`${player.name} hit Bankrupt — CHUG!`);
+    await sendDrinkInternal('chug',turnId,`${player.name} hit Bankrupt  --  CHUG!`);
     await addJPInternal(1);
     await update(ref(db,`games/${gameId}`),{[`players/${turnId}/roundScore`]:0,spinRequested:null,dingSignal:{ts:Date.now(),type:'bankrupt',count:1}});
     setTimeout(()=>advanceTurn(),2200);
@@ -809,7 +809,7 @@ async function handleSpinResult(wedge){
     valEl.textContent='LOSE A TURN ⏭️';valEl.style.color='var(--muted)';subEl.textContent='Turn passes!';
     setAnnounce(`${player.name} loses a turn!`,'They keep their round points.');
     addLog(`⏭️ ${player.name} lost a turn`);
-    await sendDrinkInternal('sip',turnId,`Lose a Turn — take a sip!`);
+    await sendDrinkInternal('sip',turnId,`Lose a Turn  --  take a sip!`);
     await update(ref(db,`games/${gameId}`),{spinRequested:null,dingSignal:{ts:Date.now(),type:'wrong',count:1}});
     setTimeout(()=>advanceTurn(),2000);
   } else if(val==='sip'){
@@ -819,7 +819,7 @@ async function handleSpinResult(wedge){
     await sendDrinkInternal('sip',turnId,`You landed on Sip! Drink up, then pick a consonant.`);
     await update(ref(db,`games/${gameId}`),{currentSpinValue:250,turnPhase:'guess_consonant',spinRequested:null,dingSignal:{ts:Date.now(),type:'ding',count:1}});
   } else if(val==='chug'){
-    valEl.textContent='CHUG 🍻';valEl.style.color='var(--red)';subEl.textContent='Chug — turn ends!';
+    valEl.textContent='CHUG 🍻';valEl.style.color='var(--red)';subEl.textContent='Chug  --  turn ends!';
     setAnnounce(`${player.name} lands on CHUG! 🍻`,'Everyone watches. Turn passes.');
     addLog(`🍻 ${player.name} chugs`);
     await sendDrinkInternal('chug',turnId,`You landed on Chug! Finish it!`);
@@ -827,7 +827,7 @@ async function handleSpinResult(wedge){
     await update(ref(db,`games/${gameId}`),{spinRequested:null,dingSignal:{ts:Date.now(),type:'bankrupt',count:1}});
     setTimeout(()=>advanceTurn(),2500);
   } else if(val==='shot'){
-    valEl.textContent='TAKE A SHOT 🥃';valEl.style.color='var(--blue)';subEl.textContent='Shot — turn ends!';
+    valEl.textContent='TAKE A SHOT 🥃';valEl.style.color='var(--blue)';subEl.textContent='Shot  --  turn ends!';
     setAnnounce(`${player.name} lands on SHOT! 🥃`,'Pour and take a shot. Turn passes.');
     addLog(`🥃 ${player.name} takes a shot`);
     await sendDrinkInternal('shot',turnId,`You landed on Shot! Pour it up!`);
@@ -874,7 +874,7 @@ window.createGame=async function(){
   try{sessionStorage.setItem('wom_host_gameId',gameId);}catch(e){} // iOS private
   subscribeGame();
   addLog(`🎮 Game ${gameId} created`);
-  setAnnounce('Welcome to Wheel of Misfortune!',`Share code ${gameId} — players open index.html to join`);
+  setAnnounce('Welcome to Wheel of Misfortune!',`Share code ${gameId}  --  players open index.html to join`);
 };
 
 function subscribeGame(){
@@ -951,7 +951,7 @@ function handleIncomingActions(g){
     const by=g.wildcardUsedBy;
     update(ref(db,`games/${gameId}`),{wildcardUsedBy:null,currentSpinValue:250,turnPhase:'guess_consonant'});
     const pn=g.players?.[by]?.name||'?';
-    setAnnounce(`${pn} uses their Wildcard! 🃏`,'Free consonant — no spin needed!');
+    setAnnounce(`${pn} uses their Wildcard! 🃏`,'Free consonant  --  no spin needed!');
     addLog(`🃏 ${pn} used wildcard`);
   }
   if(g.solveAttempt&&g.solveBy){
@@ -963,7 +963,7 @@ function handleIncomingActions(g){
     document.getElementById('solveAttemptText').textContent=g.solveAttempt;
     const p=g.players?.[g.solveBy];
     document.getElementById('solvePlayerText').textContent=`Attempted by: ${p?.name||'?'}`;
-    document.getElementById('solveAutoCheck').textContent=autoMatch?'✅ Auto-matched — looks correct!':'⚠️ Does not exactly match — verify manually';
+    document.getElementById('solveAutoCheck').textContent=autoMatch?'✅ Auto-matched  --  looks correct!':'⚠️ Does not exactly match  --  verify manually';
     document.getElementById('solveAutoCheck').style.color=autoMatch?'var(--green)':'var(--amber)';
     // Auto-judge if exact match
     if(autoMatch){setTimeout(()=>judgeSolve(true),800);}
@@ -983,14 +983,14 @@ async function processGuess(letter,playerId,g){
   const called=g.calledLetters||{};
   const player=g.players?.[playerId];
   if(called[letter]!==undefined){
-    setAnnounce(`${letter} already called!`,'Lose a turn — sip!');
+    setAnnounce(`${letter} already called!`,'Lose a turn  --  sip!');
     addLog(`⚠️ ${player?.name}: already-used ${letter}`);playWrong();
-    await sendDrinkInternal('sip',playerId,'Already called! Take a sip — turn ends.');
+    await sendDrinkInternal('sip',playerId,'Already called! Take a sip  --  turn ends.');
     await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null,dingSignal:{ts:Date.now(),type:'wrong',count:1}});
     advanceTurn();return;
   }
   if(VOWELS.has(letter)){
-    setAnnounce(`${letter} is a vowel!`,'Must buy vowels — sip!');playWrong();
+    setAnnounce(`${letter} is a vowel!`,'Must buy vowels  --  sip!');playWrong();
     await sendDrinkInternal('sip',playerId,'That\'s a vowel! Sip!');
     await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null,dingSignal:{ts:Date.now(),type:'wrong',count:1}});
     advanceTurn();return;
@@ -1011,12 +1011,12 @@ async function processGuess(letter,playerId,g){
     upd[`players/${playerId}/roundScore`]=(player?.roundScore||0)+earned;
     upd.dingSignal={ts:Date.now(),type:'ding',count};
     if(isSpeedUp){
-      setAnnounce(`${letter}! ${count} ${letter}${count>1?'s':''}! +${earned} pts`,`${player?.name} earned pts — now attempt a solve or pass!`);
+      setAnnounce(`${letter}! ${count} ${letter}${count>1?'s':''}! +${earned} pts`,`${player?.name} earned pts  --  now attempt a solve or pass!`);
     } else {
       setAnnounce(`${letter}! ${count} ${letter}${count>1?'s':''}! +${earned} pts`,`${player?.name} keeps control!`);
     }
     addLog(`✅ ${player?.name}: ${letter}×${count} +${earned} pts`);playDing(count);
-    showGR(true,`${letter} × ${count} = +${earned} pts`,isSpeedUp?`${player?.name} — now try to solve!`:`${player?.name} keeps control!`);
+    showGR(true,`${letter} × ${count} = +${earned} pts`,isSpeedUp?`${player?.name}  --  now try to solve!`:`${player?.name} keeps control!`);
     await update(ref(db,`games/${gameId}`),upd);
     if(isSpeedUp){
       // After speed-up hit, give player a brief solve window then host advances
@@ -1028,14 +1028,14 @@ async function processGuess(letter,playerId,g){
   } else {
     upd.dingSignal={ts:Date.now(),type:'wrong',count:1};
     if(isSpeedUp){
-      setAnnounce(`No ${letter}s — ${player?.name} takes a sip!`,`Host: click Next Player to continue.`);
+      setAnnounce(`No ${letter}s  --  ${player?.name} takes a sip!`,`Host: click Next Player to continue.`);
     } else {
-      setAnnounce(`No ${letter}s!`,`${player?.name}'s turn ends — sip!`);
+      setAnnounce(`No ${letter}s!`,`${player?.name}'s turn ends  --  sip!`);
     }
     addLog(`❌ ${player?.name}: no ${letter}`);playWrong();
     await sendDrinkInternal('sip',playerId,`No ${letter}s! Take a sip.`);
     await update(ref(db,`games/${gameId}`),upd);
-    showGR(false,`No ${letter}s in the puzzle`,`${player?.name} sips — next player!`);
+    showGR(false,`No ${letter}s in the puzzle`,`${player?.name} sips  --  next player!`);
     if(!isSpeedUp) setTimeout(()=>advanceTurn(),1800);
     // In speed-up, host manually advances with Next Player button
   }
@@ -1080,10 +1080,10 @@ async function processVowel(letter,playerId,g){
     checkAutoSolve(newRev,puzzle,playerId,g,upd[`players/${playerId}/roundScore`]);
   } else {
     upd.dingSignal={ts:Date.now(),type:'wrong',count:1};
-    setAnnounce(`No ${letter}s — wasted 50 pts!`,`${player?.name}'s turn ends.`);
-    addLog(`💸 ${player?.name} bought ${letter} — not in puzzle`);playWrong();
+    setAnnounce(`No ${letter}s  --  wasted 50 pts!`,`${player?.name}'s turn ends.`);
+    addLog(`💸 ${player?.name} bought ${letter}  --  not in puzzle`);playWrong();
     await update(ref(db,`games/${gameId}`),upd);
-    showGR(false,`No ${letter}s — 50 pts lost`,`${player?.name}'s turn ends`);
+    showGR(false,`No ${letter}s  --  50 pts lost`,`${player?.name}'s turn ends`);
     setTimeout(()=>advanceTurn(),1800);
   }
 }
@@ -1130,10 +1130,10 @@ window.acceptBuzz=async function(){
   if(!pendingBuzzId||!gameData)return;
   const pn=gameData.players?.[pendingBuzzId]?.name||'?';
   stopAutoReveal();
-  setAnnounce(`${pn} buzzed in!`,'Read the puzzle aloud — they attempt to solve.');
+  setAnnounce(`${pn} buzzed in!`,'Read the puzzle aloud  --  they attempt to solve.');
   await update(ref(db,`games/${gameId}`),{currentTurnPlayerId:pendingBuzzId,turnPhase:'solve'});
   document.getElementById('acceptBuzzBtn').disabled=true;
-  document.getElementById('buzzStatusText').textContent=`${pn} has control — awaiting solve`;
+  document.getElementById('buzzStatusText').textContent=`${pn} has control  --  awaiting solve`;
   pendingBuzzId=null;
 };
 
@@ -1164,17 +1164,17 @@ window.speedUpNextPlayer=async function(){
   speedUpPlayerIdx=(speedUpPlayerIdx+1)%order.length;
   const nextId=order[speedUpPlayerIdx];
   const td=3;
-  // Fix 5: check if this player already guessed — if all players have guessed, open solve-only
+  // Fix 5: check if this player already guessed  --  if all players have guessed, open solve-only
   const guessed=gameData.speedUpGuessed||{};
   const allGuessed=order.every(id=>guessed[id]);
   if(allGuessed){
-    // Everyone has had their one guess — open solve phase for active player only
+    // Everyone has had their one guess  --  open solve phase for active player only
     await update(ref(db,`games/${gameId}`),{
       currentTurnPlayerId:nextId,turnPhase:'solve',
       turnStartTime:Date.now(),turnDuration:10
     });
     const pn=gameData.players?.[nextId]?.name||'?';
-    setAnnounce(`All players have guessed — ${pn} solve attempt!`,'Type the full puzzle to win the round.');
+    setAnnounce(`All players have guessed  --  ${pn} solve attempt!`,'Type the full puzzle to win the round.');
     startTimerDisplay(Date.now(),10);
     return;
   }
@@ -1185,11 +1185,11 @@ window.speedUpNextPlayer=async function(){
   const pn=gameData.players?.[nextId]?.name||'?';
   const already=guessed[nextId];
   if(already){
-    // This player already guessed — skip to solve attempt
-    setAnnounce(`${pn} already guessed — solve attempt!`,'3 seconds to solve the puzzle!');
+    // This player already guessed  --  skip to solve attempt
+    setAnnounce(`${pn} already guessed  --  solve attempt!`,'3 seconds to solve the puzzle!');
     await update(ref(db,`games/${gameId}`),{turnPhase:'solve'});
   } else {
-    setAnnounce(`${pn}'s turn — 3 seconds!`,'ONE letter guess, then you may solve!');
+    setAnnounce(`${pn}'s turn  --  3 seconds!`,'ONE letter guess, then you may solve!');
   }
   startTimerDisplay(Date.now(),td);
 };
@@ -1211,7 +1211,7 @@ window.startBonusTimer=function(){
   let t=10;disp.textContent=t;
   bonusTimerInterval=setInterval(()=>{
     t--;disp.textContent=t;disp.style.color=t<=3?'var(--red)':'var(--gold)';
-    if(t<=0){clearInterval(bonusTimerInterval);disp.textContent='TIME!';setAnnounce('Time\'s up!','No solve — round ends.');}
+    if(t<=0){clearInterval(bonusTimerInterval);disp.textContent='TIME!';setAnnounce('Time\'s up!','No solve  --  round ends.');}
   },1000);
 };
 
@@ -1288,9 +1288,9 @@ window.judgeSolve=async function(correct){
     setTimeout(()=>startNextRound(),3000);
   } else {
     updates.solveResult={correct:false,name:player?.name||'?',ts:Date.now()};
-    setAnnounce(`Wrong! ${player?.name} loses their turn.`,'Take a sip — puzzle continues!');
+    setAnnounce(`Wrong! ${player?.name} loses their turn.`,'Take a sip  --  puzzle continues!');
     addLog(`❌ ${player?.name} wrong solve`);playWrong();
-    await sendDrinkInternal('sip',solveBy,'Wrong solve! Take a sip — turn ends.');
+    await sendDrinkInternal('sip',solveBy,'Wrong solve! Take a sip  --  turn ends.');
     await update(ref(db,`games/${gameId}`),updates);
     advanceTurn();
   }
@@ -1329,11 +1329,11 @@ function startTimerDisplay(start,dur){
     bar.style.width=pct+'%';bar.className='timer-bar'+(pct<25?' warn':'');
     if(remaining<=0&&!autoAdvanced){
       autoAdvanced=true;clearInterval(timerInterval);timerInterval=null;
-      // Fix 12: in free play mode skip auto-advance — host controls everything
+      // Fix 12: in free play mode skip auto-advance  --  host controls everything
       if(gameData?.status==='playing'&&gameData.roundType!=='tossup'&&!gameData.freePlay){
         const tid=gameData.currentTurnPlayerId;
-        if(tid)sendDrinkInternal('sip',tid,'Time\'s up! Take a sip — turn passes.');
-        addLog(`⏰ Time up — auto-advancing turn`);
+        if(tid)sendDrinkInternal('sip',tid,'Time\'s up! Take a sip  --  turn passes.');
+        addLog(`⏰ Time up  --  auto-advancing turn`);
         setAnnounce('Time\'s up!','Turn advances automatically.');
         setTimeout(()=>advanceTurn(),1200);
       }
@@ -1380,7 +1380,7 @@ async function startNextRound(){
   stopAutoReveal();bonusExtraLetters=[];
   const currentRound=gameData.currentRound||1;
   const newRound=currentRound+1;
-  // Fix 12: in free play mode, never auto-end — just keep incrementing round
+  // Fix 12: in free play mode, never auto-end  --  just keep incrementing round
   if(!gameData.freePlay&&newRound>(gameData.totalRounds||3)){await endGame();return;}
   const players=gameData.players||{};const su={};
   // Bank round scores to total before showing splash
@@ -1393,7 +1393,7 @@ async function startNextRound(){
   // Delay clearing puzzle until after splash
   setTimeout(async()=>{
     await update(ref(db,`games/${gameId}`),{currentRound:newRound,roundSolved:false,calledLetters:{},revealedLetters:'',currentPuzzle:'',currentCategory:''});
-    setAnnounce(`Round ${newRound}!`,'Host — enter the next puzzle and click Set Puzzle.');
+    setAnnounce(`Round ${newRound}!`,'Host  --  enter the next puzzle and click Set Puzzle.');
     addLog(`🔄 Round ${newRound} starting`);
   },5500);
 }
@@ -1403,7 +1403,7 @@ async function startNextRound(){
 window.revealAll = async function() {
   if (!gameData) return;
   const puzzle = (gameData.currentPuzzle || '').toUpperCase();
-  if (!puzzle) { addLog('⚠️ No puzzle set — nothing to reveal'); return; }
+  if (!puzzle) { addLog('⚠️ No puzzle set  --  nothing to reveal'); return; }
   // Build a string of every unique letter in the puzzle
   const allLetters = [...new Set(puzzle.split('').filter(c => c !== ' '))].join('');
   // Mark all letters as called+hit in calledLetters
@@ -1415,7 +1415,7 @@ window.revealAll = async function() {
     roundSolved: true,
     dingSignal: { ts: Date.now(), type: 'ding', count: Math.min(allLetters.length, 5) }
   });
-  setAnnounce('✨ Full board revealed!', 'All letters are now showing — advance to next round when ready.');
+  setAnnounce('✨ Full board revealed!', 'All letters are now showing  --  advance to next round when ready.');
   addLog('✨ Host revealed full board');
   playApplause();
 };
@@ -1442,7 +1442,7 @@ window.previewPuzzle = function(raw) {
     }).join('');
     return '<div style="display:flex;justify-content:center;gap:2px;">' + cells + '</div>';
   }).join('');
-  pmeta.textContent = words.length + ' words · ' + tiles + ' tiles · ' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + (overflow ? ' ⚠️ TOO LONG' : ' ✓');
+  pmeta.textContent = words.length + ' words  -  ' + tiles + ' tiles  -  ' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + (overflow ? ' ⚠️ TOO LONG' : ' (ok)');
   pmeta.style.color = overflow ? 'var(--red)' : 'var(--green)';
 };
 
@@ -1553,8 +1553,8 @@ window.setPuzzle=async function(){
   addLog(`🧩 Puzzle: "${puzzle}" [${cat}] [${rtype}]`);
   // Avoid nested template literals for browser compat
   let roundStartMsg;
-  if(rtype==='tossup') roundStartMsg='Toss-Up — reveal letters one by one!';
-  else if(rtype==='speedup') roundStartMsg='Speed-Up — spin for base value!';
+  if(rtype==='tossup') roundStartMsg='Toss-Up  --  reveal letters one by one!';
+  else if(rtype==='speedup') roundStartMsg='Speed-Up  --  spin for base value!';
   else if(rtype==='bonus') roundStartMsg='Bonus Round! RSTLNE filled. Player picks 3+1.';
   else roundStartMsg=(players[order[0]]?.name||'?')+' goes first!';
   setAnnounce('Category: '+cat, roundStartMsg);
@@ -1578,8 +1578,8 @@ window.launchGame=async function(){
     turnPhase:'spin',currentSpinValue:null,turnStartTime:Date.now(),turnDuration:td,
   });
   document.getElementById('puzzleInp').value='';document.getElementById('categoryInp').value='';
-  addLog(`🎮 Game launched! Round 1 — ${cat}`);
-  setAnnounce(`Round 1 — ${cat}!`,`${players[order[0]]?.name} spins first!`);
+  addLog(`🎮 Game launched! Round 1  --  ${cat}`);
+  setAnnounce(`Round 1  --  ${cat}!`,`${players[order[0]]?.name} spins first!`);
   startTimerDisplay(Date.now(),td);
 };
 
@@ -1611,10 +1611,10 @@ function renderHistory() {
   }
   el.innerHTML = hist.map((h, i) => {
     const date = new Date(h.ts).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const scores = (h.players || []).map(p => `${p.avatar || ''}${p.name}: ${p.score}`).join(' · ');
+    const scores = (h.players || []).map(p => `${p.avatar || ''}${p.name}: ${p.score}`).join('  -  ');
     return `<div class="hist-entry">
-      <div class="hist-date">${date} · ${h.rounds} round${h.rounds !== 1 ? 's' : ''} · Jackpot $${h.jackpot}</div>
-      <div class="hist-winner">🏆 ${h.winnerAvatar || ''} ${h.winner} — ${h.winnerScore} pts</div>
+      <div class="hist-date">${date}  -  ${h.rounds} round${h.rounds !== 1 ? 's' : ''}  -  Jackpot $${h.jackpot}</div>
+      <div class="hist-winner">🏆 ${h.winnerAvatar || ''} ${h.winner}  --  ${h.winnerScore} pts</div>
       <div class="hist-scores">${scores}</div>
     </div>`;
   }).join('');
@@ -1725,7 +1725,7 @@ function updatePlayers(g){
   document.getElementById('hostPlayerList').innerHTML=Object.entries(players).sort((a,b)=>a[1].slot-b[1].slot).map(([id,p])=>`
     <div class="player-item ${id===turnId?'active-turn':''}">
       <div class="p-av" style="background:${p.color||'#333'}22;color:${p.color||'var(--text)'}">${p.avatar||'🎲'}</div>
-      <div class="p-info"><div class="p-name" style="color:${p.color||'var(--text)'}">${p.name}${id===turnId?' 🎯':''}</div><div class="p-meta">+${p.roundScore||0} rnd · ${p.totalScore||0} total${p.wildcard?' · 🃏':''}</div></div>
+      <div class="p-info"><div class="p-name" style="color:${p.color||'var(--text)'}">${p.name}${id===turnId?' 🎯':''}</div><div class="p-meta">+${p.roundScore||0} rnd  -  ${p.totalScore||0} total${p.wildcard?'  -  🃏':''}</div></div>
       <input class="score-edit" type="number" value="${p.totalScore||0}" onchange="overrideScore('${id}',this.value)" title="Override total score">
     </div>`).join('');
 }
@@ -1758,11 +1758,11 @@ function showGR(hit,main,sub){
 }
 
 // ─── UTILITIES ───
-window.overrideScore=async function(id,val){const n=parseInt(val);if(isNaN(n))return;await update(ref(db,`games/${gameId}/players/${id}`),{totalScore:n});addLog(`✏️ Score override: ${gameData?.players?.[id]?.name} → ${n}`);};
+window.overrideScore=async function(id,val){const n=parseInt(val);if(isNaN(n))return;await update(ref(db,`games/${gameId}/players/${id}`),{totalScore:n});addLog(`✏️ Score override: ${gameData?.players?.[id]?.name} -> ${n}`);};
 window.addJP=async function(amt){if(!gameData)return;await update(ref(db,`games/${gameId}`),{jackpot:Math.max(0,(gameData.jackpot||0)+amt)});};
 async function addJPInternal(amt){if(!gameData)return;await update(ref(db,`games/${gameId}`),{jackpot:Math.max(0,(gameData.jackpot||0)+amt)});}
-window.sendDrink=async function(type,target,desc){await sendDrinkInternal(type,target,desc);addLog(`🍹 Drink: ${type} → ${target==='all'?'everyone':gameData?.players?.[target]?.name}`);};
-window.sendTargetDrink=async function(type){const id=document.getElementById('drinkTargetSel').value;if(!id)return;const p=gameData?.players?.[id];sendDrink(type,id,`${p?.name} — ${type}!`);};
+window.sendDrink=async function(type,target,desc){await sendDrinkInternal(type,target,desc);addLog(`🍹 Drink: ${type} -> ${target==='all'?'everyone':gameData?.players?.[target]?.name}`);};
+window.sendTargetDrink=async function(type){const id=document.getElementById('drinkTargetSel').value;if(!id)return;const p=gameData?.players?.[id];sendDrink(type,id,`${p?.name}  --  ${type}!`);};
 async function sendDrinkInternal(type,target,desc){await update(ref(db,`games/${gameId}`),{drinkSignal:{type,target,desc,ts:Date.now()}});}
 window.awardWildcard=async function(){const id=document.getElementById('wildcardTargetSel').value;if(!id)return;const p=gameData?.players?.[id];await update(ref(db,`games/${gameId}/players/${id}`),{wildcard:true});addLog(`🃏 Wildcard awarded to ${p?.name}`);setAnnounce(`${p?.name} receives a Wildcard! 🃏`,'They can use it on any future turn.');};
 function setAnnounce(text,sub=''){document.getElementById('announceText').textContent=text;document.getElementById('announceSub').textContent=sub;}
