@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Wheel of Misfortune — Join</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#F5C518;--bg:#0a0a14;--surface:#13132a;--surface2:#1a1a35;--surface3:#22224a;
+  --border:rgba(255,255,255,0.08);--text:#f0eeee;--muted:#6b6b8a;
+  --red:#E24B4A;--green:#2ecc71;--blue:#3498db;--amber:#f39c12;
+  --tile-off:#1a1a3a;--tile-on:#f5e6b0;--tile-border:#2a2a5a;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;-webkit-text-size-adjust:100%;}
+.stars{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle 3s infinite alternate;}
+@keyframes twinkle{from{opacity:.06}to{opacity:.45}}
+.app{position:relative;z-index:1;min-height:100vh;min-height:-webkit-fill-available;display:flex;flex-direction:column;align-items:center;padding:12px 12px 40px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold);letter-spacing:3px;text-shadow:0 0 20px rgba(245,197,24,.35);line-height:1;text-align:center;margin-top:12px;}
+.logo-sub{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;text-align:center;margin-bottom:16px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:460px;margin-bottom:10px;}
+.card-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.inp{width:100%;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Nunito',sans-serif;font-size:16px;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--gold);}
+.inp-group{margin-bottom:10px;}
+.inp-group label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+.btn{padding:11px 18px;border:none;border-radius:9px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:transform .1s,opacity .2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-gold{background:var(--gold);color:#1a0a00;width:100%;margin-top:4px;}
+.btn-gold:hover{opacity:.9;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-sm{padding:7px 12px;font-size:12px;}
+.hidden{display:none!important;}
+
+/* Fix 13: sound toggle */
+.mute-btn{position:fixed;top:10px;right:12px;z-index:100;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-size:13px;cursor:pointer;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;transition:all .2s;}
+.mute-btn:hover{border-color:var(--gold);color:var(--gold);}
+.mute-btn.muted{border-color:var(--red);color:var(--red);}
+
+/* Portrait warning */
+.portrait-warn{display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:30px;}
+@media(orientation:landscape)and(max-height:500px){.portrait-warn{display:flex;}}
+.portrait-warn .big{font-size:52px;}
+.portrait-warn p{font-size:14px;color:var(--muted);}
+
+/* Lobby */
+.lobby-code{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:8px;text-align:center;}
+.player-slots{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%;max-width:460px;margin-bottom:10px;}
+.pslot{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;}
+.pslot.filled{border-color:rgba(245,197,24,.4);}
+.pslot.you{border-color:var(--green);background:rgba(46,204,113,.06);}
+.pslot-num{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.pslot-name{font-size:16px;font-weight:800;margin-top:2px;}
+.pslot-empty{font-size:20px;margin-top:2px;}
+.pslot-avatar{font-size:22px;margin-top:2px;}
+
+/* Avatar picker */
+.avatar-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0 12px;}
+.av-btn{width:42px;height:42px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.av-btn.selected{border-color:var(--gold);transform:scale(1.15);}
+.color-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;}
+.col-btn{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s;}
+.col-btn.selected{border-color:#fff;transform:scale(1.2);}
+
+/* Board */
+.board-wrap{width:100%;max-width:460px;margin-bottom:8px;}
+.cat-banner{background:linear-gradient(135deg,#1a1a4a,#0d0d28);border:1px solid rgba(245,197,24,.25);border-radius:8px 8px 0 0;padding:6px 12px;text-align:center;}
+.cat-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.cat-value{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);letter-spacing:2px;}
+.board-grid{background:#0a0a1e;border:1px solid rgba(245,197,24,.12);border-top:none;border-radius:0 0 8px 8px;padding:8px 6px;display:flex;flex-direction:column;gap:4px;}
+.board-row{display:flex;justify-content:center;gap:3px;}
+.tile{width:24px;height:30px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;flex-shrink:0;transition:all .3s;}
+.tile-letter{background:var(--tile-off);border:1px solid var(--tile-border);color:transparent;user-select:none;}
+.tile-letter.revealed{background:var(--tile-on);border-color:#c49a10;color:#1a0a00;animation:tileReveal .4s ease;}
+.tile-letter.solved{background:#fff8e0;border-color:#c49a10;color:#1a0a00;}
+.tile-space{background:transparent;border:none;}
+@keyframes tileReveal{0%{transform:scaleY(0);background:var(--gold)}55%{background:#ffe566}100%{transform:scaleY(1);background:var(--tile-on)}}
+
+/* Used letters A-Z grid (change #13 ) */
+.used-letters{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin-bottom:8px;width:100%;max-width:460px;}
+.ul-tile{height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+.ul-tile.hit{background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.3);color:var(--green);}
+.ul-tile.miss{background:rgba(226,75,74,.1);border-color:rgba(226,75,74,.2);color:var(--red);}
+.ul-tile.unused{color:var(--muted);}
+
+/* Fix 10: spin animation on player phones */
+.spin-wheel-wrap{width:100%;max-width:460px;display:none;flex-direction:column;align-items:center;margin-bottom:8px;}
+.spin-wheel-wrap.show{display:flex;}
+.spin-wheel-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+#playerWheelCanvas{width:200px;height:200px;border-radius:50%;}
+.spin-wheel-ptr{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:17px solid var(--gold);margin-bottom:6px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+
+/* Round / jackpot banner */
+.rnd-banner{display:flex;align-items:center;justify-content:space-between;background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.15);border-radius:9px;padding:7px 12px;margin-bottom:8px;width:100%;max-width:460px;}
+.rnd-label{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--gold);letter-spacing:2px;}
+.rnd-type{font-size:11px;color:var(--muted);}
+.jackpot-pill{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--gold);}
+
+/* Timer */
+.timer-wrap{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:8px;width:100%;max-width:460px;}
+.timer-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 1s linear;}
+.timer-fill.warn{background:var(--red);}
+
+/* Turn headers */
+.your-turn-hdr{background:linear-gradient(135deg,rgba(245,197,24,.14),rgba(245,197,24,.03));border:2px solid var(--gold);border-radius:12px;padding:12px 14px;text-align:center;margin-bottom:8px;width:100%;max-width:460px;}
+.yturn-lbl{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:3px;}
+.yturn-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.wait-hdr{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center;margin-bottom:8px;width:100%;max-width:460px;}
+.wait-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:2px;}
+
+/* Spin result bubble */
+.spin-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:12px;text-align:center;margin-bottom:8px;width:100%;max-width:460px;animation:popIn .3s ease;}
+@keyframes popIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.spin-val{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;}
+.spin-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* Action panel */
+.action-panel{width:100%;max-width:460px;}
+.action-row{display:flex;gap:6px;margin-bottom:8px;}
+.action-row .btn{flex:1;font-size:13px;padding:11px 8px;text-align:center;line-height:1.3;}
+
+/* Keyboard */
+.kb-wrap{margin-bottom:8px;}
+.kb-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.kb{display:flex;flex-wrap:wrap;gap:5px;}
+.key{width:34px;height:34px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.key:hover:not([disabled]){border-color:var(--gold);color:var(--gold);background:rgba(245,197,24,.07);}
+.key.vowel-key{border-color:rgba(52,152,219,.3);color:var(--blue);}
+.key.vowel-key:hover:not([disabled]){border-color:var(--blue);background:rgba(52,152,219,.1);}
+.key.k-hit{background:rgba(46,204,113,.1);border-color:rgba(46,204,113,.3);color:var(--green);cursor:not-allowed;}
+.key.k-miss{background:rgba(226,75,74,.08);border-color:rgba(226,75,74,.2);color:var(--red);cursor:not-allowed;}
+
+/* Solve */
+.solve-inp{width:100%;padding:11px;background:var(--surface2);border:1.5px solid var(--gold);border-radius:9px;color:var(--text);font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;outline:none;text-transform:uppercase;margin-bottom:7px;}
+.solve-btns{display:flex;gap:6px;}
+
+/* Scoreboard */
+.score-rows{display:flex;flex-direction:column;gap:5px;}
+.s-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:9px;border:1px solid var(--border);}
+.s-row.active{border-color:var(--gold);background:rgba(245,197,24,.06);}
+.s-rank{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);min-width:20px;}
+.s-name{flex:1;font-size:13px;font-weight:700;}
+.s-name.you{color:var(--green);}
+.s-round{font-size:10px;color:var(--amber);min-width:46px;text-align:right;}
+.s-total{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);min-width:40px;text-align:right;}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+
+/* Fix 11: category vote on player screen */
+.cat-vote-wrap{width:100%;max-width:460px;margin-bottom:10px;display:none;}
+.cat-vote-wrap.show{display:block;}
+.cat-vote-card{background:var(--surface);border:1.5px solid rgba(52,152,219,.35);border-radius:14px;padding:18px;}
+.cat-vote-title{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue);letter-spacing:3px;text-align:center;margin-bottom:4px;}
+.cat-vote-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px;}
+.cat-vote-opts{display:flex;flex-direction:column;gap:8px;}
+.cat-opt{padding:13px 16px;background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;cursor:pointer;font-size:15px;font-weight:700;color:var(--text);text-align:center;transition:all .2s;}
+.cat-opt:hover{border-color:var(--blue);background:rgba(41,128,185,.07);}
+.cat-opt.selected{border-color:var(--blue);background:rgba(41,128,185,.12);color:var(--blue);}
+.cat-opt.selected::after{content:' ✓';}
+.cat-vote-done{text-align:center;padding:16px 0;}
+.cat-vote-done .big{font-size:44px;}
+.cat-vote-done p{font-size:13px;color:var(--muted);margin-top:6px;}
+.cat-vote-timer{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:2px;}
+
+/* Fix 12: free play indicator on round banner */
+.fp-badge{font-size:11px;color:#9b59b6;font-weight:700;background:rgba(142,68,173,.12);border:1px solid rgba(142,68,173,.25);border-radius:8px;padding:2px 7px;margin-left:4px;}
+
+/* Fix 14: drink history log */
+.drink-log-wrap{width:100%;max-width:460px;margin-bottom:8px;}
+.drink-log-summary{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:10px 14px;cursor:pointer;transition:border-color .2s;user-select:none;}
+.drink-log-summary:hover{border-color:rgba(245,197,24,.3);}
+.drink-log-summary.open{border-radius:11px 11px 0 0;border-bottom-color:transparent;}
+.drink-log-pills{display:flex;gap:6px;flex:1;flex-wrap:wrap;}
+.drink-pill{padding:3px 9px;border-radius:12px;font-size:12px;font-weight:800;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.dp-sip{background:rgba(243,156,18,.15);border:1px solid rgba(243,156,18,.3);color:var(--amber);}
+.dp-chug{background:rgba(226,75,74,.12);border:1px solid rgba(226,75,74,.25);color:var(--red);}
+.dp-shot{background:rgba(41,128,185,.12);border:1px solid rgba(41,128,185,.25);color:var(--blue);}
+.drink-log-toggle{font-size:11px;color:var(--muted);}
+.drink-log-body{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 11px 11px;padding:10px 14px;display:none;}
+.drink-log-body.open{display:block;}
+.drink-log-list{max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+.drink-log-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.drink-log-time{flex-shrink:0;font-size:10px;min-width:38px;}
+.drink-log-msg{flex:1;color:var(--text);}
+
+/* Buzz button */
+.buzz-btn{width:100%;max-width:460px;padding:20px;background:var(--red);border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:#fff;cursor:pointer;margin-bottom:8px;animation:buzzP .7s infinite alternate;display:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.buzz-btn.show{display:block;}
+@keyframes buzzP{from{opacity:.85;transform:scale(1)}to{opacity:1;transform:scale(1.02)}}
+
+/* Wildcard badge */
+.wildcard-badge{background:rgba(142,68,173,.15);border:1px solid rgba(142,68,173,.3);border-radius:8px;padding:6px 12px;text-align:center;width:100%;max-width:460px;margin-bottom:8px;display:none;}
+.wildcard-badge.show{display:block;}
+.wc-text{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#9b59b6;letter-spacing:2px;}
+
+/* Drink modal */
+.drink-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;}
+.drink-overlay.show{display:flex;}
+.drink-modal{background:var(--surface);border-radius:18px;padding:26px 22px;text-align:center;max-width:320px;width:100%;border:2px solid;}
+.drink-modal.m-sip{border-color:var(--amber);}
+.drink-modal.m-chug{border-color:var(--red);}
+.drink-modal.m-shot{border-color:var(--blue);}
+.d-emoji{font-size:52px;margin-bottom:8px;}
+.d-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;margin-bottom:4px;}
+.drink-modal.m-sip .d-title{color:var(--amber);}
+.drink-modal.m-chug .d-title{color:var(--red);}
+.drink-modal.m-shot .d-title{color:var(--blue);}
+.d-desc{font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+
+/* Solve result flash */
+.solve-flash{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.solve-flash.show{display:flex;}
+.solve-flash.correct-flash{background:rgba(39,174,96,.92);}
+.solve-flash.wrong-flash{background:rgba(226,75,74,.88);}
+.sf-emoji{font-size:72px;}
+.sf-title{font-family:'Bebas Neue',sans-serif;font-size:44px;color:#fff;letter-spacing:4px;text-shadow:0 2px 10px rgba(0,0,0,.4);}
+.sf-sub{font-size:16px;color:rgba(255,255,255,.8);}
+
+/* Fix 7: between-round leaderboard splash */
+.lb-overlay{position:fixed;inset:0;background:rgba(10,10,20,.97);z-index:400;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;}
+.lb-overlay.show{display:flex;}
+.lb-inner{width:100%;max-width:440px;}
+.lb-title{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--gold);letter-spacing:4px;text-align:center;text-shadow:0 0 24px rgba(245,197,24,.4);margin-bottom:3px;}
+.lb-sub{font-size:11px;color:var(--muted);text-align:center;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
+.lb-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:11px;margin-bottom:7px;animation:lbSlide .4s ease both;}
+@keyframes lbSlide{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.lb-row.first{background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.28);}
+.lb-row.other{background:var(--surface2);border:1px solid var(--border);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--muted);min-width:30px;}
+.lb-avatar{font-size:22px;}
+.lb-name{flex:1;font-size:15px;font-weight:800;}
+.lb-total{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);min-width:52px;text-align:right;}
+.lb-progress{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:14px;}
+.lb-progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 5s linear;}
+.lb-dismiss{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;}
+
+/* Confetti canvas */
+#confettiCanvas{position:fixed;inset:0;pointer-events:none;z-index:500;}
+
+/* Fix 15: game recap card */
+.recap-card{background:var(--surface);border:1px solid rgba(245,197,24,.25);border-radius:16px;padding:18px;width:100%;max-width:460px;margin-bottom:12px;}
+.recap-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);letter-spacing:3px;margin-bottom:12px;text-align:center;}
+.recap-stat{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.recap-stat:last-child{border-bottom:none;}
+.recap-stat-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center;}
+.recap-stat-label{font-size:12px;color:var(--muted);flex:1;}
+.recap-stat-val{font-size:14px;font-weight:800;color:var(--text);text-align:right;}
+.recap-share-btn{width:100%;padding:12px;background:transparent;border:1px solid rgba(245,197,24,.35);border-radius:10px;color:var(--gold);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;margin-top:8px;}
+.recap-share-btn:hover{background:rgba(245,197,24,.08);}
+
+/* Winner */
+.winner-wrap{width:100%;max-width:460px;text-align:center;padding:20px 0;}
+.w-trophy{font-size:68px;}
+.w-title{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--gold);letter-spacing:4px;text-shadow:0 0 28px rgba(245,197,24,.5);}
+.w-name{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;margin-bottom:4px;}
+.w-sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+
+/* Toast */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:10px 18px;font-size:13px;font-weight:700;transition:transform .3s;z-index:999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.connecting{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
+.connecting p{color:var(--muted);font-size:13px;margin-top:12px;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<!-- Portrait warning -->
+<div class="portrait-warn">
+  <div class="big">📱</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:2px;">ROTATE YOUR PHONE</div>
+  <p>Wheel of Misfortune plays best in portrait mode!</p>
+</div>
+
+<canvas id="confettiCanvas"></canvas>
+<div class="stars" id="stars"></div>
+<div class="connecting" id="connOverlay"><div class="spinner"></div><p>Connecting...</p></div>
+
+<div class="app" id="mainApp" style="display:none">
+  <!-- Fix 13: sound toggle -->
+  <button class="mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+
+  <!-- JOIN -->
+  <div id="sJoin" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="logo">WHEEL OF MISFORTUNE</div>
+    <div class="logo-sub">Where Every Spin Has Consequences</div>
+    <div class="card">
+      <div class="card-title">Join a Game</div>
+      <div class="inp-group"><label>Your Name</label><input class="inp" id="nameInp" placeholder="Enter your name..." maxlength="16" autocomplete="off"></div>
+      <div class="inp-group"><label>Game Code</label><input class="inp" id="codeInp" placeholder="WXYZ" maxlength="4" style="text-transform:uppercase;letter-spacing:5px;font-size:22px;font-weight:800;" autocomplete="off"></div>
+      <div class="inp-group">
+        <label>Pick an Avatar</label>
+        <div class="avatar-grid" id="avatarGrid"></div>
+      </div>
+      <div class="inp-group">
+        <label>Pick a Color</label>
+        <div class="color-grid" id="colorGrid"></div>
+      </div>
+      <button class="btn btn-gold" id="joinBtn" onclick="joinGame()">JOIN GAME</button>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="sLobby" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="logo" style="margin-bottom:12px;">WHEEL OF MISFORTUNE</div>
+    <div class="card" style="text-align:center;">
+      <div class="card-title">Game Code</div>
+      <div class="lobby-code" id="lobbyCode">----</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="lobbyStatus">Waiting for players...</div>
+    </div>
+    <div class="player-slots" id="playerSlots"></div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:12px;color:var(--muted);">You joined as</div>
+      <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:3px;" id="yourNameDisp"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:5px;">Waiting for host to start...</div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="sGame" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="logo" style="font-size:22px;margin-top:6px;margin-bottom:4px;">🎡 WHEEL OF MISFORTUNE</div>
+    <!-- Fix 10: mini spin wheel -->
+    <div class="spin-wheel-wrap" id="spinWheelWrap">
+      <div class="spin-wheel-label">🎡 Spinning...</div>
+      <div class="spin-wheel-ptr"></div>
+      <canvas id="playerWheelCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <!-- Fix 11: category vote -->
+    <div class="cat-vote-wrap" id="catVoteWrap">
+      <div class="cat-vote-card">
+        <div class="cat-vote-title">VOTE!</div>
+        <div class="cat-vote-sub">Pick a category for the next round</div>
+        <div class="cat-vote-opts" id="catVoteOpts"></div>
+        <div class="cat-vote-done hidden" id="catVoteDone">
+          <div class="big">✅</div>
+          <p>Vote submitted! Waiting for others...</p>
+        </div>
+        <div class="cat-vote-timer" id="catVoteTimer"></div>
+      </div>
+    </div>
+
+    <div class="rnd-banner">
+      <div><div class="rnd-label" id="rndLabel">ROUND 1</div><div class="rnd-type" id="rndType">Standard</div></div>
+      <div class="jackpot-pill" id="jpPill">🏆 $0</div>
+    </div>
+    <div class="timer-wrap"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+
+    <!-- Board -->
+    <div class="board-wrap">
+      <div class="cat-banner"><div class="cat-label">Category</div><div class="cat-value" id="catVal">---</div></div>
+      <div class="board-grid" id="boardGrid"></div>
+    </div>
+
+    <!-- Used letters A–Z -->
+    <div class="used-letters" id="usedLettersGrid"></div>
+
+    <!-- Wildcard badge -->
+    <div class="wildcard-badge" id="wildcardBadge">
+      <div class="wc-text">🃏 YOU HAVE A WILDCARD — use it to guess a free consonant next turn!</div>
+    </div>
+
+    <!-- Toss-up buzz -->
+    <button class="buzz-btn" id="buzzBtn" onclick="doBuzz()">🔔 BUZZ IN!</button>
+
+    <!-- Turn headers -->
+    <div id="yourTurnHdr" class="your-turn-hdr hidden">
+      <div class="yturn-lbl">🎯 YOUR TURN</div>
+      <div class="yturn-sub" id="yturnSub">Spin the wheel, buy a vowel, or solve!</div>
+    </div>
+    <div id="waitHdr" class="wait-hdr hidden">
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Now Spinning</div>
+      <div class="wait-name" id="waitName">---</div>
+    </div>
+
+    <!-- Spin result -->
+    <div id="spinBubble" class="spin-bubble hidden">
+      <div class="spin-val" id="spinVal">300 PTS</div>
+      <div class="spin-sub" id="spinSub">Pick a consonant!</div>
+    </div>
+
+    <!-- Action panel -->
+    <div class="action-panel hidden" id="actionPanel">
+      <div class="action-row" id="mainBtns">
+        <button class="btn btn-gold" id="btnSpin" onclick="requestSpin()">🎡 SPIN</button>
+        <button class="btn btn-outline" id="btnVowel" onclick="startBuyVowel()">💰 VOWEL<br><small style="font-weight:400;font-size:10px">-50 pts</small></button>
+        <button class="btn btn-outline" id="btnSolve" onclick="startSolve()">✅ SOLVE</button>
+        <button class="btn btn-outline hidden" id="btnWildcard" onclick="useWildcard()" style="border-color:rgba(142,68,173,.4);color:#9b59b6;">🃏 WILD</button>
+      </div>
+      <div class="kb-wrap hidden" id="kbConsonant">
+        <div class="kb-title">Guess a Consonant</div>
+        <div class="kb" id="keysConsonant"></div>
+      </div>
+      <div class="kb-wrap hidden" id="kbVowel">
+        <div class="kb-title">Buy a Vowel — costs 50 pts</div>
+        <div class="kb" id="keysVowel"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:7px;" onclick="cancelVowel()">Cancel</button>
+      </div>
+      <div class="hidden" id="solveBlock">
+        <input class="solve-inp" id="solveInp" placeholder="TYPE THE FULL ANSWER..." autocomplete="off">
+        <div class="solve-btns">
+          <button class="btn btn-gold" style="flex:1" onclick="submitSolve()">SUBMIT SOLVE</button>
+          <button class="btn btn-outline" style="flex:0 0 76px" onclick="cancelSolve()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fix 14: drink history log -->
+    <div class="drink-log-wrap" id="drinkLogWrap">
+      <div class="drink-log-summary" id="drinkLogSummary" onclick="toggleDrinkLog()">
+        <div class="drink-log-pills" id="drinkLogPills">
+          <span style="font-size:12px;color:var(--muted);">No drinks yet 🍵</span>
+        </div>
+        <span class="drink-log-toggle" id="drinkLogToggle">▼ History</span>
+      </div>
+      <div class="drink-log-body" id="drinkLogBody">
+        <div class="drink-log-list" id="drinkLogList"></div>
+      </div>
+    </div>
+
+    <!-- Scoreboard -->
+    <div class="card" style="width:100%;max-width:460px;">
+      <div class="card-title">Scoreboard — Round / Total</div>
+      <div class="score-rows" id="scoreRows"></div>
+    </div>
+  </div>
+
+  <!-- WINNER -->
+  <div id="sWinner" class="hidden winner-wrap">
+    <div class="w-trophy">🏆</div>
+    <div class="w-title">WINNER!</div>
+    <div class="w-name" id="wName"></div>
+    <div class="w-sub" id="wSub"></div>
+    <div class="recap-card" id="recapCard" style="display:none;">
+    <div class="recap-title">📊 GAME RECAP</div>
+    <div id="recapStats"></div>
+    <button class="recap-share-btn" onclick="shareRecap()">📸 Screenshot &amp; Share</button>
+  </div>
+  <div class="card" id="finalCard"></div>
+    <button class="btn btn-gold" style="margin-top:14px;width:100%;" onclick="location.reload()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<!-- Fix 7: between-round leaderboard splash -->
+<div class="lb-overlay" id="lbOverlay" onclick="this.classList.remove('show')">
+  <div class="lb-inner">
+    <div class="lb-title" id="lbTitle">ROUND OVER</div>
+    <div class="lb-sub" id="lbSub">Standings</div>
+    <div id="lbRows"></div>
+    <div class="lb-progress"><div class="lb-progress-fill" id="lbFill" style="width:0%"></div></div>
+    <div class="lb-dismiss">Tap anywhere to dismiss early</div>
+  </div>
+</div>
+
+<!-- Drink overlay -->
+<div class="drink-overlay" id="drinkOverlay">
+  <div class="drink-modal" id="drinkModal">
+    <div class="d-emoji" id="dEmoji">🍺</div>
+    <div class="d-title" id="dTitle">SIP!</div>
+    <div class="d-desc" id="dDesc">Take a sip of your drink.</div>
+    <button class="btn btn-gold" onclick="closeDrink()">GOT IT 👍</button>
+  </div>
+</div>
+
+<!-- Solve flash -->
+<div class="solve-flash" id="solveFlash">
+  <div class="sf-emoji" id="sfEmoji">✅</div>
+  <div class="sf-title" id="sfTitle">CORRECT!</div>
+  <div class="sf-sub" id="sfSub"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+const app = initializeApp(FIREBASE_CONFIG);
+const db = getDatabase(app);
+
+// Stars
+const se=document.getElementById('stars');
+for(let i=0;i<65;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.5+.5;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;se.appendChild(s);}
+
+// Avatar / color pickers
+const AVATARS=['🎉','🍺','🎲','🔥','⭐','🎸','🦊','🐯','🍕','🎯','👑','🤠'];
+const COLORS=['#E24B4A','#F5C518','#2ecc71','#3498db','#9b59b6','#e67e22','#1abc9c','#e91e63','#00bcd4','#ff9800','#8bc34a','#ff5722'];
+let selectedAvatar=AVATARS[0], selectedColor=COLORS[0];
+
+const agEl=document.getElementById('avatarGrid');
+AVATARS.forEach((a,i)=>{const b=document.createElement('button');b.className='av-btn'+(i===0?' selected':'');b.textContent=a;b.onclick=()=>{selectedAvatar=a;document.querySelectorAll('.av-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');};agEl.appendChild(b);});
+const cgEl=document.getElementById('colorGrid');
+COLORS.forEach((c,i)=>{const b=document.createElement('button');b.className='col-btn'+(i===0?' selected':'');b.style.background=c;b.onclick=()=>{selectedColor=c;document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');};cgEl.appendChild(b);});
+
+const VOWELS=new Set(['A','E','I','O','U']);
+const CONSONANTS='BCDFGHJKLMNPQRSTVWXYZ'.split('');
+
+// Reconnect: restore session from sessionStorage (#15)
+let gameId=null,myPlayerId=null,myName=null;
+try {
+  gameId=sessionStorage.getItem('wom_gameId')||null;
+  myPlayerId=sessionStorage.getItem('wom_playerId')||null;
+  myName=sessionStorage.getItem('wom_name')||null;
+} catch(e) {} // iOS private browsing
+let mySlot=null;
+let gameData=null,timerInterval=null,lastDrinkTs=0,lastSolveResultTs=0,lastDingTs=0;
+
+function show(id){['sJoin','sLobby','sGame','sWinner'].forEach(s=>{const el=document.getElementById(s);const t=s===id;el.classList.toggle('hidden',!t);if(t)el.style.display='flex';else el.style.display='none';});}
+function toast(msg,dur=2400){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+
+// ─── WEB AUDIO SOUNDS (#5) ───
+const AudioCtx=window.AudioContext||window.webkitAudioContext;
+let actx=null;
+function getACtx(){if(!actx){try{actx=new AudioCtx();}catch(e){}}if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}return actx;}
+function playDing(count=1){if(soundMuted)return;
+  const ac=getACtx();if(!ac)return;
+  for(let i=0;i<Math.min(count,5);i++){
+    setTimeout(()=>{
+      try{
+        const o=ac.createOscillator();const g=ac.createGain();
+        o.connect(g);g.connect(ac.destination);
+        o.frequency.setValueAtTime(880+i*110,ac.currentTime);
+        o.frequency.exponentialRampToValueAtTime(1100+i*80,ac.currentTime+.08);
+        g.gain.setValueAtTime(.35,ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.5);
+        o.start(ac.currentTime);o.stop(ac.currentTime+.5);
+      }catch(e){}
+    },i*160);
+  }
+}
+function playBankrupt(){if(soundMuted)return;
+  const ac=getACtx();if(!ac)return;
+  try{
+    const o=ac.createOscillator();const g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);o.type='sawtooth';
+    o.frequency.setValueAtTime(220,ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(55,ac.currentTime+.6);
+    g.gain.setValueAtTime(.4,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.6);
+    o.start(ac.currentTime);o.stop(ac.currentTime+.6);
+  }catch(e){}
+}
+function playApplause(){if(soundMuted)return;
+  const ac=getACtx();if(!ac)return;
+  for(let i=0;i<30;i++){
+    setTimeout(()=>{
+      try{
+        const b=ac.createOscillator();const g=ac.createGain();
+        b.type='square';b.connect(g);g.connect(ac.destination);
+        b.frequency.value=200+Math.random()*1600;
+        g.gain.setValueAtTime(Math.random()*.08,ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.12);
+        b.start(ac.currentTime);b.stop(ac.currentTime+.12);
+      }catch(e){}
+    },i*60);
+  }
+}
+function playBuzz(){if(soundMuted)return;
+  const ac=getACtx();if(!ac)return;
+  try{
+    const o=ac.createOscillator();const g=ac.createGain();
+    o.type='square';o.connect(g);g.connect(ac.destination);
+    o.frequency.setValueAtTime(440,ac.currentTime);
+    g.gain.setValueAtTime(.3,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.25);
+    o.start(ac.currentTime);o.stop(ac.currentTime+.25);
+  }catch(e){}
+}
+function playWrong(){if(soundMuted)return;
+  const ac=getACtx();if(!ac)return;
+  try{
+    const o=ac.createOscillator();const g=ac.createGain();
+    o.type='square';o.connect(g);g.connect(ac.destination);
+    o.frequency.setValueAtTime(220,ac.currentTime);
+    o.frequency.setValueAtTime(180,ac.currentTime+.15);
+    g.gain.setValueAtTime(.3,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);
+    o.start(ac.currentTime);o.stop(ac.currentTime+.4);
+  }catch(e){}
+}
+
+
+// ─── FIX 13: SOUND TOGGLE ───
+let soundMuted = false;
+window.toggleMute = function() {
+  soundMuted = !soundMuted;
+  const btn = document.getElementById('muteBtn');
+  btn.textContent = soundMuted ? '🔇' : '🔊';
+  btn.classList.toggle('muted', soundMuted);
+  // Persist preference
+  try { localStorage.setItem('wom_muted', soundMuted ? '1' : '0'); } catch(e) {}
+};
+// Restore mute state on load
+try {
+  if (localStorage.getItem('wom_muted') === '1') {
+    soundMuted = true;
+    setTimeout(() => {
+      const btn = document.getElementById('muteBtn');
+      if (btn) { btn.textContent = '🔇'; btn.classList.add('muted'); }
+    }, 1000);
+  }
+} catch(e) {}
+
+// ─── CONFETTI (#13b) ───
+function launchConfetti(){
+  const canvas=document.getElementById('confettiCanvas');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const pieces=Array.from({length:120},()=>({
+    x:Math.random()*canvas.width,y:-10,
+    vx:(Math.random()-.5)*4,vy:Math.random()*4+2,
+    color:['#F5C518','#E24B4A','#2ecc71','#3498db','#9b59b6','#fff'][Math.floor(Math.random()*6)],
+    w:Math.random()*10+4,h:Math.random()*6+3,
+    rot:Math.random()*360,rspeed:(Math.random()-.5)*6,
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.rspeed;p.vy+=.05;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+    });
+    frame++;if(frame<180)requestAnimationFrame(draw);else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+// iOS Safari: pre-warm AudioContext on first user interaction
+function iosAudioUnlock() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+  document.removeEventListener('touchstart', iosAudioUnlock);
+  document.removeEventListener('click', iosAudioUnlock);
+}
+document.addEventListener('touchstart', iosAudioUnlock, { once: true });
+document.addEventListener('click', iosAudioUnlock, { once: true });
+
+// Boot
+setTimeout(()=>{document.getElementById('connOverlay').style.display='none';document.getElementById('mainApp').style.display='flex';
+  // Auto-reconnect if session exists
+  if(gameId&&myPlayerId&&myName){
+    document.getElementById('yourNameDisp').textContent=myName;
+    show('sLobby');
+    onValue(ref(db,`games/${gameId}`),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
+  }
+},900);
+
+document.getElementById('codeInp').addEventListener('input',function(){this.value=this.value.toUpperCase();});
+
+// ─── JOIN ───
+window.joinGame=async function(){
+  const name=document.getElementById('nameInp').value.trim();
+  const code=document.getElementById('codeInp').value.trim().toUpperCase();
+  if(!name){toast('Enter your name!');return;}
+  if(code.length!==4){toast('Enter the 4-letter code!');return;}
+  document.getElementById('joinBtn').disabled=true;
+  gameId=code;myName=name;
+  const snap=await get(ref(db,`games/${gameId}`));
+  if(!snap.exists()){toast('Game not found!');document.getElementById('joinBtn').disabled=false;return;}
+  const g=snap.val();
+  if(g.status!=='lobby'){toast('Game already started!');document.getElementById('joinBtn').disabled=false;return;}
+  const players=g.players||{};
+  if(Object.keys(players).length>=(g.maxPlayers||4)){toast('Game is full!');document.getElementById('joinBtn').disabled=false;return;}
+  myPlayerId=push(ref(db,`games/${gameId}/players`)).key;
+  mySlot=Object.keys(players).length+1;
+  await set(ref(db,`games/${gameId}/players/${myPlayerId}`),{
+    name,slot:mySlot,totalScore:0,roundScore:0,avatar:selectedAvatar,color:selectedColor,wildcard:false,joinedAt:serverTimestamp()
+  });
+  // Save session (#15)
+  try{
+    sessionStorage.setItem('wom_gameId',gameId);
+    sessionStorage.setItem('wom_playerId',myPlayerId);
+    sessionStorage.setItem('wom_name',myName);
+  }catch(e){} // iOS private browsing
+  document.getElementById('lobbyCode').textContent=gameId;
+  document.getElementById('yourNameDisp').textContent=name;
+  show('sLobby');
+  onValue(ref(db,`games/${gameId}`),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
+};
+
+// ─── STATE HANDLER ───
+function handleState(g){
+  updateLobby(g);
+  checkDrinkSignal(g);
+  checkDingSignal(g);
+  checkSolveResult(g);
+  checkLeaderboardSplash(g); // Fix 7
+  checkSpinSignal(g); // Fix 10
+  checkCategoryVote(g); // Fix 11
+  if(g.status==='lobby'){show('sLobby');}
+  else if(g.status==='playing'){show('sGame');renderGame(g);}
+  else if(g.status==='ended'){show('sWinner');renderWinner(g);}
+}
+
+function updateLobby(g){
+  const players=g.players||{};const max=g.maxPlayers||4;
+  let html='';const filled={};
+  Object.entries(players).forEach(([id,p])=>filled[p.slot]=p);
+  for(let i=1;i<=max;i++){
+    const p=filled[i];const isMe=p&&p.name===myName;
+    if(p)html+=`<div class="pslot filled ${isMe?'you':''}"><div class="pslot-num">Player ${i}</div><div class="pslot-avatar">${p.avatar||'🎲'}</div><div class="pslot-name" style="color:${p.color||'var(--text)'}">${p.name}</div><div style="font-size:10px;color:${isMe?'var(--green)':'var(--muted)'}">${isMe?'← You':'✓ Joined'}</div></div>`;
+    else html+=`<div class="pslot"><div class="pslot-num">Player ${i}</div><div class="pslot-empty">⬜</div></div>`;
+  }
+  document.getElementById('playerSlots').innerHTML=html;
+  document.getElementById('lobbyStatus').textContent=`${Object.keys(players).length}/${max} players joined`;
+}
+
+
+// ─── FIX 10: PLAYER WHEEL ANIMATION ───
+const P_WEDGES = [
+  {l:'300',c:'#E24B4A'},{l:'450',c:'#F5C518'},{l:'BANKRUPT',c:'#1a1a2e'},
+  {l:'500',c:'#27ae60'},{l:'SIP',c:'#e67e22'},{l:'350',c:'#2980b9'},
+  {l:'200',c:'#8e44ad'},{l:'LOSE TURN',c:'#2c3e50'},{l:'400',c:'#16a085'},
+  {l:'CHUG',c:'#c0392b'},{l:'250',c:'#f39c12'},{l:'500',c:'#27ae60'},
+  {l:'WILDCARD',c:'#6c3483'},{l:'BANKRUPT',c:'#1a1a2e'},{l:'150',c:'#1abc9c'},
+  {l:'400',c:'#e67e22'},{l:'SIP',c:'#e67e22'},{l:'300',c:'#E24B4A'},
+  {l:'SHOT',c:'#2980b9'},{l:'450',c:'#2ecc71'},{l:'200',c:'#e74c3c'},
+  {l:'CHUG',c:'#c0392b'},{l:'350',c:'#f1c40f'},{l:'500',c:'#8e44ad'},
+];
+let pWheelAngle = 0, pWheelAnimFrame = null, pWheelSpinning = false;
+
+function drawPlayerWheel(angle) {
+  const canvas = document.getElementById('playerWheelCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  // Fix: handle retina/HiDPI displays (iOS always 2x or 3x)
+  const dpr = window.devicePixelRatio || 1;
+  if (!canvas._dprSet) {
+    const size = 400;
+    canvas.width = size * dpr; canvas.height = size * dpr;
+    canvas.style.width = '200px'; canvas.style.height = '200px';
+    ctx.scale(dpr, dpr);
+    canvas._dprSet = true;
+  }
+  const cx = 200, cy = 200, r = 196;
+  const arc = (2 * Math.PI) / P_WEDGES.length;
+  ctx.clearRect(0, 0, 400, 400);
+  P_WEDGES.forEach((w, i) => {
+    const s = angle + i * arc - Math.PI / 2, e = s + arc;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, s, e); ctx.closePath();
+    ctx.fillStyle = w.c; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(s + arc / 2); ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Nunito,sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 2;
+    ctx.fillText(w.l, r - 8, 4); ctx.restore();
+  });
+  ctx.beginPath(); ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+  ctx.fillStyle = '#0a0a14'; ctx.fill();
+  ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = '#F5C518'; ctx.font = 'bold 10px Nunito'; ctx.textAlign = 'center'; ctx.shadowBlur = 0;
+  ctx.fillText('WOM', cx, cy + 4);
+}
+
+function startPlayerSpin(durationMs) {
+  pWheelSpinning = true;
+  document.getElementById('spinWheelWrap').classList.add('show');
+  const extraSpins = Math.floor(Math.random() * 6) + 8;
+  const target = Math.random() * Math.PI * 2;
+  const total = extraSpins * Math.PI * 2 + target;
+  const start = performance.now();
+  const startAngle = pWheelAngle;
+  function ease(t) { return 1 - Math.pow(1 - t, 4); }
+  function animate(now) {
+    const elapsed = now - start;
+    const prog = Math.min(elapsed / durationMs, 1);
+    pWheelAngle = startAngle + total * ease(prog);
+    drawPlayerWheel(pWheelAngle);
+    if (prog < 1) {
+      pWheelAnimFrame = requestAnimationFrame(animate);
+    } else {
+      pWheelSpinning = false;
+      setTimeout(() => document.getElementById('spinWheelWrap').classList.remove('show'), 1800);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+let lastSpinSignalTs = 0;
+function checkSpinSignal(g) {
+  const sig = g.spinSignal;
+  if (!sig || sig.ts === lastSpinSignalTs) return;
+  lastSpinSignalTs = sig.ts;
+  if (!pWheelSpinning) startPlayerSpin(sig.duration || 5000);
+}
+
+
+// ─── FIX 11: CATEGORY VOTE (player side) ───
+let myVoteIdx = null;
+let catVoteActive = false;
+let catVoteTs = 0;
+
+function checkCategoryVote(g) {
+  const cv = g.categoryVote;
+  const wrap = document.getElementById('catVoteWrap');
+  if (!wrap) return;
+  if (!cv || !cv.active) {
+    wrap.classList.remove('show');
+    myVoteIdx = null;
+    catVoteActive = false;
+    return;
+  }
+  // New vote session
+  if (cv.ts !== catVoteTs) {
+    catVoteTs = cv.ts;
+    myVoteIdx = null;
+    catVoteActive = true;
+    document.getElementById('catVoteOpts').innerHTML = '';
+    document.getElementById('catVoteDone').classList.add('hidden');
+    document.getElementById('catVoteOpts').style.display = 'flex';
+    renderVoteOptions(cv.options);
+  }
+  wrap.classList.add('show');
+  // Update timer display from countdown stored as ts
+  const elapsed = Math.floor((Date.now() - cv.ts) / 1000);
+  const remaining = Math.max(0, 30 - elapsed);
+  const timerEl = document.getElementById('catVoteTimer');
+  if (timerEl) timerEl.textContent = remaining > 0 ? `${remaining}s remaining` : 'Voting closed';
+}
+
+function renderVoteOptions(options) {
+  const optsEl = document.getElementById('catVoteOpts');
+  optsEl.innerHTML = (options || []).map((opt, i) =>
+    `<div class="cat-opt" id="catOpt_${i}" onclick="submitCatVote(${i})">${opt}</div>`
+  ).join('');
+}
+
+window.submitCatVote = async function(idx) {
+  if (myVoteIdx !== null) return; // already voted
+  myVoteIdx = idx;
+  // Highlight selection
+  document.querySelectorAll('.cat-opt').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+    el.style.pointerEvents = 'none';
+  });
+  document.getElementById('catVoteOpts').style.display = 'none';
+  document.getElementById('catVoteDone').classList.remove('hidden');
+  await update(ref(db, `games/${gameId}`), {
+    [`categoryVote/votes/${myPlayerId}`]: idx
+  });
+};
+
+// Fix 12: show free play badge on round banner
+function updateFreePlayBadge(g) {
+  const rndLabel = document.getElementById('rndLabel');
+  if (!rndLabel) return;
+  if (g.freePlay) {
+    rndLabel.innerHTML = `ROUND ${g.currentRound || 1} <span class="fp-badge">FREE PLAY</span>`;
+  } else {
+    rndLabel.textContent = `ROUND ${g.currentRound || 1}`;
+  }
+}
+
+// ─── RENDER GAME ───
+function renderGame(g){
+  updateFreePlayBadge(g); // Fix 12
+  document.getElementById('rndType').textContent=rtLabel(g.roundType);
+  document.getElementById('jpPill').textContent=`🏆 $${g.jackpot||0}`;
+  document.getElementById('catVal').textContent=(g.currentCategory||'---').toUpperCase();
+  renderBoard(g);
+  renderUsedLetters(g);
+  renderScoreboard(g);
+  renderTurnUI(g);
+  renderTimer(g);
+  // Wildcard
+  const myPlayer=g.players?.[myPlayerId];
+  const hasWC=myPlayer?.wildcard||false;
+  document.getElementById('wildcardBadge').classList.toggle('show',hasWC);
+  // Toss-up
+  const isTossup=g.roundType==='tossup';
+  const isMyTurn=g.currentTurnPlayerId===myPlayerId;
+  document.getElementById('buzzBtn').style.display=isTossup&&!isMyTurn?'block':'none';
+}
+
+function rtLabel(t){return{standard:'Standard Round',tossup:'⚡ Toss-Up Round',speedup:'🚀 Speed-Up Round',bonus:'🌟 Bonus Round'}[t]||'Standard Round';}
+
+// ─── BOARD ───
+function renderBoard(g){
+  const puzzle=(g.currentPuzzle||'').toUpperCase();
+  const revealed=new Set((g.revealedLetters||'').toUpperCase().split('').filter(Boolean));
+  const solved=!!g.roundSolved;
+  const grid=document.getElementById('boardGrid');
+  if(!puzzle){grid.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Waiting for puzzle...</div>';return;}
+  const words=puzzle.trim().split(/\s+/);
+  const rows=buildRows(words,14);
+  grid.innerHTML=rows.map(row=>`<div class="board-row">${row.map(ch=>{
+    if(ch===' ')return`<div class="tile tile-space"></div>`;
+    const show=solved||revealed.has(ch);
+    return`<div class="tile tile-letter ${show?(solved?'solved':'revealed'):''}">${show?ch:''}</div>`;
+  }).join('')}</div>`).join('');
+}
+
+function buildRows(words,cols){
+  const rows=[];let cur=[];let len=0;
+  words.forEach(w=>{const need=len===0?w.length:w.length+1;if(len+need<=cols){cur.push(w);len+=need;}else{if(cur.length)rows.push(cur);cur=[w];len=w.length;}});
+  if(cur.length)rows.push(cur);
+  return rows.slice(0,4).map(rw=>{
+    const str=rw.join(' ');const pad=Math.max(0,Math.floor((cols-str.length)/2));
+    return[...(' '.repeat(pad)+str).padEnd(cols,' ')];
+  });
+}
+
+// ─── USED LETTERS A-Z (#12) ───
+function renderUsedLetters(g){
+  const called=g.calledLetters||{};
+  const el=document.getElementById('usedLettersGrid');
+  el.innerHTML='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l=>{
+    const state=called[l]!==undefined?(called[l]?'hit':'miss'):'unused';
+    return`<div class="ul-tile ${state}">${l}</div>`;
+  }).join('');
+}
+
+// ─── SCOREBOARD ───
+function renderScoreboard(g){
+  const players=g.players||{};const turnId=g.currentTurnPlayerId;
+  const sorted=Object.entries(players).sort((a,b)=>b[1].totalScore-a[1].totalScore);
+  const ranks=['🥇','🥈','🥉'];
+  document.getElementById('scoreRows').innerHTML=sorted.map(([id,p],i)=>`
+    <div class="s-row ${id===turnId?'active':''}">
+      <div class="s-rank">${ranks[i]||i+1}</div>
+      ${id===turnId?'<div class="tdot"></div>':''}
+      <span style="font-size:16px;">${p.avatar||'🎲'}</span>
+      <div class="s-name ${id===myPlayerId?'you':''}" style="color:${id===myPlayerId?'var(--green)':p.color||'var(--text)'}">${p.name}${id===myPlayerId?' (you)':''}</div>
+      <div class="s-round">+${p.roundScore||0}</div>
+      <div class="s-total">${p.totalScore||0}</div>
+    </div>`).join('');
+}
+
+// ─── TURN UI ───
+function renderTurnUI(g){
+  const isMyTurn=g.currentTurnPlayerId===myPlayerId;
+  const phase=g.turnPhase||'spin';
+  const spinVal=g.currentSpinValue;
+  const isTossup=g.roundType==='tossup';
+  const myPlayer=g.players?.[myPlayerId];
+  const hasWC=myPlayer?.wildcard||false;
+
+  document.getElementById('yourTurnHdr').classList.toggle('hidden',!isMyTurn||isTossup);
+  document.getElementById('waitHdr').classList.toggle('hidden',isMyTurn||isTossup);
+  document.getElementById('actionPanel').classList.toggle('hidden',!isMyTurn||isTossup);
+
+  if(!isMyTurn&&g.players?.[g.currentTurnPlayerId])
+    document.getElementById('waitName').textContent=g.players[g.currentTurnPlayerId].name;
+
+  // Spin bubble
+  const bubble=document.getElementById('spinBubble');
+  if(isMyTurn&&spinVal!==null&&spinVal!==undefined&&phase==='guess_consonant'){
+    bubble.classList.remove('hidden');
+    if(typeof spinVal==='number'){
+      document.getElementById('spinVal').textContent=`${spinVal} PTS`;
+      document.getElementById('spinVal').style.color='var(--gold)';
+      document.getElementById('spinSub').textContent='Now pick a consonant!';
+    } else {
+      const sv={bankrupt:{v:'BANKRUPT 💀',c:'var(--red)',s:'You lost your round points!'},
+        loseaturn:{v:'LOSE A TURN ⏭️',c:'var(--muted)',s:'Turn passes to next player.'},
+        sip:{v:'SIP 🍺',c:'var(--amber)',s:'Take a sip — then pick a consonant.'},
+        chug:{v:'CHUG 🍻',c:'var(--red)',s:'Chug your drink!'},
+        shot:{v:'TAKE A SHOT 🥃',c:'var(--blue)',s:'Pour and take a shot!'}};
+      const s=sv[spinVal]||{v:String(spinVal).toUpperCase(),c:'var(--text)',s:''};
+      document.getElementById('spinVal').textContent=s.v;
+      document.getElementById('spinVal').style.color=s.c;
+      document.getElementById('spinSub').textContent=s.s;
+    }
+  } else {bubble.classList.add('hidden');}
+
+  if(!isMyTurn||isTossup)return;
+
+  const isSpeedUp=g.roundType==='speedup';
+  // Fix 5: in speed-up, check if this player has already used their one guess
+  const speedUpGuessed=g.speedUpGuessed||{};
+  const alreadyGuessedSpeedUp=isSpeedUp&&!!speedUpGuessed[myPlayerId];
+
+  // In speed-up after guessing: show solve-only, no keyboard, no spin, no vowel
+  const showCons=!alreadyGuessedSpeedUp&&phase==='guess_consonant'&&typeof spinVal==='number';
+  const showVowel=!isSpeedUp&&phase==='buy_vowel'; // no vowel buying in speed-up
+  const showSolve=phase==='solve'||(alreadyGuessedSpeedUp&&phase==='guess_consonant');
+  const showMain=!showCons&&!showVowel&&!showSolve;
+
+  document.getElementById('mainBtns').style.display=showMain?'flex':'none';
+  document.getElementById('kbConsonant').classList.toggle('hidden',!showCons);
+  document.getElementById('kbVowel').classList.toggle('hidden',!showVowel);
+  document.getElementById('solveBlock').classList.toggle('hidden',!showSolve);
+  document.getElementById('btnWildcard').classList.toggle('hidden',!hasWC||!showMain||isSpeedUp);
+
+  if(showCons)buildKB(g,'cons');
+  if(showVowel)buildKB(g,'vowel');
+
+  // In speed-up: spin/vowel/solve buttons locked except solve after guessing
+  document.getElementById('btnSpin').disabled=phase!=='spin'||isSpeedUp;
+  document.getElementById('btnVowel').disabled=(myPlayer?.roundScore||0)<50||phase!=='spin'||isSpeedUp;
+  document.getElementById('btnSolve').disabled=isSpeedUp?false:phase!=='spin';
+
+  document.getElementById('yturnSub').textContent=
+    alreadyGuessedSpeedUp?'You guessed — now try to solve the puzzle!':
+    showCons?`Speed-Up: ${spinVal} pts per letter — ONE guess only!`:
+    showVowel?'Choose a vowel to reveal (costs 50 pts)':
+    showSolve?'Type the complete puzzle solution!':
+    isSpeedUp?'Speed-Up — guess ONE consonant or solve!':
+    'Spin the wheel, buy a vowel, or solve the puzzle!';
+}
+
+function buildKB(g,mode){
+  const called=g.calledLetters||{};
+  const letters=mode==='vowel'?['A','E','I','O','U']:CONSONANTS;
+  const container=document.getElementById(mode==='vowel'?'keysVowel':'keysConsonant');
+  container.innerHTML=letters.map(l=>{
+    const used=called[l]!==undefined;
+    return`<button class="key ${VOWELS.has(l)?'vowel-key':''} ${used?(called[l]?'k-hit':'k-miss'):''}" 
+      ${used?'disabled':''} onclick="guessLetter('${l}')">${l}</button>`;
+  }).join('');
+}
+
+function renderTimer(g){
+  if(!g.turnStartTime||!g.turnDuration)return;
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    const elapsed=(Date.now()-g.turnStartTime)/1000;
+    const pct=Math.max(0,Math.min(100,100-(elapsed/g.turnDuration)*100));
+    const el=document.getElementById('timerFill');
+    el.style.width=pct+'%';
+    el.className='timer-fill'+(pct<25?' warn':'');
+  },500);
+}
+
+// ─── PLAYER ACTIONS ───
+window.requestSpin=async function(){getACtx();await update(ref(db,`games/${gameId}`),{spinRequested:serverTimestamp(),spinRequestBy:myPlayerId});};
+window.startBuyVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'buy_vowel'});};
+window.cancelVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null});};
+window.startSolve=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'solve'});setTimeout(()=>document.getElementById('solveInp').focus(),100);};
+window.cancelSolve=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'spin'});};
+window.guessLetter=async function(l){
+  // Fix 2: block vowels in consonant-guess phase regardless of how we got here
+  const phase=gameData?.turnPhase;
+  if(phase==='guess_consonant' && ['A','E','I','O','U'].includes(l)){
+    toast('That\'s a vowel! Buy it with the Vowel button.');
+    return;
+  }
+  await update(ref(db,`games/${gameId}`),{guessedLetter:l,guessedBy:myPlayerId,guessedAt:serverTimestamp()});
+};
+window.submitSolve=async function(){
+  const ans=document.getElementById('solveInp').value.trim().toUpperCase();
+  if(!ans)return;
+  await update(ref(db,`games/${gameId}`),{solveAttempt:ans,solveBy:myPlayerId,solveAt:serverTimestamp()});
+  document.getElementById('solveInp').value='';
+};
+window.doBuzz=async function(){playBuzz();await update(ref(db,`games/${gameId}`),{buzzedBy:myPlayerId,buzzedAt:serverTimestamp()});toast('Buzzed in! 🔔');};
+window.useWildcard=async function(){
+  await update(ref(db,`games/${gameId}`),{[`players/${myPlayerId}/wildcard`]:false,wildcardUsedBy:myPlayerId,wildcardUsedAt:serverTimestamp()});
+  toast('🃏 Wildcard used — guess a free consonant!');
+};
+
+
+// ─── FIX 14: DRINK HISTORY LOG ───
+let myDrinkLog = []; // {type, desc, time}
+let mySips = 0, myChugs = 0, myShots = 0;
+
+window.toggleDrinkLog = function() {
+  const body = document.getElementById('drinkLogBody');
+  const summary = document.getElementById('drinkLogSummary');
+  const toggle = document.getElementById('drinkLogToggle');
+  const open = body.classList.toggle('open');
+  summary.classList.toggle('open', open);
+  toggle.textContent = open ? '▲ History' : '▼ History';
+};
+
+function recordDrink(type, desc) {
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  myDrinkLog.unshift({ type, desc, time });
+  if (type === 'sip') mySips++;
+  else if (type === 'chug') myChugs++;
+  else if (type === 'shot') myShots++;
+  updateDrinkLogUI();
+}
+
+function updateDrinkLogUI() {
+  const pills = document.getElementById('drinkLogPills');
+  const list = document.getElementById('drinkLogList');
+  if (!pills || !list) return;
+  const icons = { sip: '🍺', chug: '🍻', shot: '🥃' };
+  const cls = { sip: 'dp-sip', chug: 'dp-chug', shot: 'dp-shot' };
+  // Summary pills
+  const parts = [];
+  if (mySips)  parts.push(`<span class="drink-pill dp-sip">🍺 ${mySips} sip${mySips !== 1 ? 's' : ''}</span>`);
+  if (myChugs) parts.push(`<span class="drink-pill dp-chug">🍻 ${myChugs} chug${myChugs !== 1 ? 's' : ''}</span>`);
+  if (myShots) parts.push(`<span class="drink-pill dp-shot">🥃 ${myShots} shot${myShots !== 1 ? 's' : ''}</span>`);
+  pills.innerHTML = parts.length ? parts.join('') : '<span style="font-size:12px;color:var(--muted);">No drinks yet 🍵</span>';
+  // Log entries
+  list.innerHTML = myDrinkLog.slice(0, 20).map(d =>
+    `<div class="drink-log-item">
+      <span class="drink-log-time">${d.time}</span>
+      <span style="font-size:15px;">${icons[d.type] || '🍹'}</span>
+      <span class="drink-log-msg">${d.desc}</span>
+    </div>`
+  ).join('') || '<div style="font-size:12px;color:var(--muted);padding:4px 0;">No drinks recorded yet.</div>';
+}
+
+// ─── DRINK SIGNAL ───
+function checkDrinkSignal(g){
+  const sig=g.drinkSignal;
+  if(!sig||sig.ts===lastDrinkTs)return;
+  lastDrinkTs=sig.ts;
+  if(sig.target==='all'||sig.target===myPlayerId){showDrink(sig.type,sig.desc);}
+}
+function showDrink(type,desc){
+  const cfgs={sip:{emoji:'🍺',title:'SIP!',cls:'m-sip'},chug:{emoji:'🍻',title:'CHUG!',cls:'m-chug'},shot:{emoji:'🥃',title:'TAKE A SHOT!',cls:'m-shot'}};
+  const c=cfgs[type]||cfgs.sip;
+  const modal=document.getElementById('drinkModal');
+  modal.className='drink-modal '+c.cls;
+  document.getElementById('dEmoji').textContent=c.emoji;
+  document.getElementById('dTitle').textContent=c.title;
+  document.getElementById('dDesc').textContent=desc||'';
+  document.getElementById('drinkOverlay').classList.add('show');
+  recordDrink(type, desc||c.title); // Fix 14: log every drink
+}
+window.closeDrink=function(){document.getElementById('drinkOverlay').classList.remove('show');};
+
+// ─── DING SIGNAL (#5) ───
+function checkDingSignal(g){
+  const sig=g.dingSignal;
+  if(!sig||sig.ts===lastDingTs)return;
+  lastDingTs=sig.ts;
+  if(sig.type==='bankrupt')playBankrupt();
+  else if(sig.type==='wrong')playWrong();
+  else playDing(sig.count||1);
+}
+
+// ─── SOLVE RESULT FLASH (#2 feedback + confetti) ───
+function checkSolveResult(g){
+  const r=g.solveResult;
+  if(!r||r.ts===lastSolveResultTs)return;
+  lastSolveResultTs=r.ts;
+  const flash=document.getElementById('solveFlash');
+  document.getElementById('sfEmoji').textContent=r.correct?'🎉':'❌';
+  document.getElementById('sfTitle').textContent=r.correct?'CORRECT!':'WRONG!';
+  document.getElementById('sfSub').textContent=r.correct?`${r.name} solves it! Everyone else sips!`:`${r.name} — wrong! Take a sip, turn ends.`;
+  flash.className='solve-flash show '+(r.correct?'correct-flash':'wrong-flash');
+  if(r.correct){playApplause();launchConfetti();}else{playWrong();}
+  setTimeout(()=>flash.classList.remove('show'),3000);
+}
+
+
+// ─── FIX 7: LEADERBOARD SPLASH (player side) ───
+let lastSplashTs = 0;
+function checkLeaderboardSplash(g) {
+  const sig = g.leaderboardSplash;
+  if (!sig || sig.ts === lastSplashTs) return;
+  lastSplashTs = sig.ts;
+  const players = g.players || {};
+  const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
+  const ranks = ['🥇', '🥈', '🥉'];
+  const overlay = document.getElementById('lbOverlay');
+  document.getElementById('lbTitle').textContent = `ROUND ${sig.round} OVER`;
+  document.getElementById('lbSub').textContent = `After Round ${sig.round}`;
+  document.getElementById('lbRows').innerHTML = sorted.map(([id, p], i) => `
+    <div class="lb-row ${i === 0 ? 'first' : 'other'}" style="animation-delay:${i * 0.1}s">
+      <div class="lb-rank">${ranks[i] || i + 1}</div>
+      <div class="lb-avatar">${p.avatar || '🎲'}</div>
+      <div class="lb-name" style="color:${id === myPlayerId ? 'var(--green)' : p.color || 'var(--text)'}">${p.name}${id === myPlayerId ? ' (you)' : ''}</div>
+      <div class="lb-total">${p.totalScore || 0}</div>
+    </div>`).join('');
+  overlay.classList.add('show');
+  const fill = document.getElementById('lbFill');
+  fill.style.width = '0%';
+  setTimeout(() => { fill.style.width = '100%'; }, 50);
+  playApplause();
+  setTimeout(() => overlay.classList.remove('show'), 5500);
+}
+
+
+// ─── FIX 15: GAME RECAP ───
+function buildRecapCard(g) {
+  const card = document.getElementById('recapCard');
+  const statsEl = document.getElementById('recapStats');
+  if (!card || !statsEl) return;
+  const players = g.players || {};
+  const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
+  const [winnerId, winner] = sorted[0] || ['', { name: '?', totalScore: 0 }];
+
+  // Find most drinks (from Firebase player data — drinks field tracked by host)
+  const mostDrinks = sorted.reduce((best, [id, p]) =>
+    (p.drinks || 0) > (best[1].drinks || 0) ? [id, p] : best, sorted[0] || ['', {}]);
+
+  // Find who went bankrupt (check log signal — approximation via drinks vs score ratio)
+  // Best we can do without full event log: show total drinks per player
+  const totalPlayers = sorted.length;
+  const avgScore = sorted.reduce((s, [, p]) => s + (p.totalScore || 0), 0) / totalPlayers || 1;
+
+  // My personal drink summary from local log
+  const myDrinkSummary = [
+    mySips   ? `${mySips} sip${mySips   !== 1 ? 's' : ''}` : null,
+    myChugs  ? `${myChugs} chug${myChugs !== 1 ? 's' : ''}` : null,
+    myShots  ? `${myShots} shot${myShots !== 1 ? 's' : ''}` : null,
+  ].filter(Boolean).join(', ') || 'None — well done!';
+
+  const stats = [
+    { icon: '🏆', label: 'Winner', val: `${winner.avatar || ''} ${winner.name} — ${winner.totalScore} pts` },
+    { icon: '🎯', label: 'Total rounds played', val: `${g.currentRound || 1} of ${g.totalRounds || '?'}` },
+    { icon: '💰', label: 'Jackpot collected', val: `$${g.jackpot || 0}` },
+    { icon: '🍺', label: 'Your drinks this game', val: myDrinkSummary },
+    { icon: '📊', label: 'Your final score', val: `${players[myPlayerId]?.totalScore || 0} pts` },
+    { icon: '🥃', label: 'Most drinks (on record)', val: `${mostDrinks[1]?.avatar || ''} ${mostDrinks[1]?.name || '?'} — ${mostDrinks[1]?.drinks || 0}` },
+    { icon: '👥', label: 'Players', val: sorted.map(([, p]) => `${p.avatar || ''} ${p.name}`).join(', ') },
+  ];
+
+  statsEl.innerHTML = stats.map(s => `
+    <div class="recap-stat">
+      <div class="recap-stat-icon">${s.icon}</div>
+      <div class="recap-stat-label">${s.label}</div>
+      <div class="recap-stat-val">${s.val}</div>
+    </div>`).join('');
+
+  card.style.display = 'block';
+}
+
+window.shareRecap = function() {
+  // Prompt user to screenshot — Web Share API if available
+  const text = buildShareText();
+  if (navigator.share) {
+    navigator.share({ title: 'Wheel of Misfortune Recap', text })
+      .catch(err => { if (err.name !== 'AbortError') console.warn('Share failed:', err); });
+  } else {
+    // Fallback: copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+      toast('📋 Recap copied to clipboard!');
+    }).catch(() => {
+      toast('Screenshot the screen to share!');
+    });
+  }
+};
+
+function buildShareText() {
+  const g = gameData;
+  if (!g) return 'Wheel of Misfortune — what a game!';
+  const players = g.players || {};
+  const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
+  const ranks = ['🥇', '🥈', '🥉'];
+  let text = `🎡 WHEEL OF MISFORTUNE RECAP
+`;
+  text += `━━━━━━━━━━━━━━━━━━━━
+`;
+  text += `${sorted.map(([, p], i) => `${ranks[i] || `${i+1}.`} ${p.avatar || ''} ${p.name}: ${p.totalScore} pts`).join('
+')}
+`;
+  text += `━━━━━━━━━━━━━━━━━━━━
+`;
+  text += `Jackpot: $${g.jackpot || 0}  |  Rounds: ${g.currentRound || '?'}
+`;
+  text += `My drinks: ${mySips} sips · ${myChugs} chugs · ${myShots} shots
+`;
+  text += `#WheelOfMisfortune`;
+  return text;
+}
+
+// ─── WINNER ───
+function renderWinner(g){
+  const players=g.players||{};
+  const sorted=Object.entries(players).sort((a,b)=>b[1].totalScore-a[1].totalScore);
+  const [wid,wp]=sorted[0]||['',{name:'?',totalScore:0,avatar:'🏆'}];
+  document.getElementById('wName').textContent=`${wp.avatar||''} ${wp.name.toUpperCase()}`;
+  document.getElementById('wSub').textContent=`${wp.totalScore} total points · Jackpot: $${g.jackpot||0}`;
+  launchConfetti();playApplause();
+  buildRecapCard(g); // Fix 15
+  const ranks=['🥇','🥈','🥉'];
+  document.getElementById('finalCard').innerHTML=`<div class="card-title">Final Standings</div>`+sorted.map(([id,p],i)=>`
+    <div class="s-row" style="margin-bottom:5px">
+      <div class="s-rank">${ranks[i]||i+1}</div>
+      <span style="font-size:16px">${p.avatar||'🎲'}</span>
+      <div class="s-name ${id===myPlayerId?'you':''}" style="color:${id===myPlayerId?'var(--green)':p.color||'var(--text)'}">${p.name}</div>
+      <div class="s-total">${p.totalScore}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
