@@ -355,25 +355,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       <canvas id="playerWheelCanvas" width="400" height="400"></canvas>
     </div>
 
-    <!-- Fix 11: category vote -->
-    <!-- category vote is now a full-screen modal (see catVoteOverlay) -->
-    <div style="display:none" id="catVoteWrap">
-      <div>
-        <div class="cat-vote-title">VOTE!</div>
-        <div class="cat-vote-sub">Pick a category for the next round</div>
-        <div class="cat-vote-opts" id="catVoteOpts"></div>
-        <div class="cat-vote-done hidden" id="catVoteDone">
-          <div class="big">[ok]</div>
-          <p>Vote submitted! Waiting for others...</p>
-        </div>
-        <div class="cat-vote-timer" id="catVoteTimer"></div>
-      </div>
-    </div>
 
-    <div class="rnd-banner">
-      <div><div class="rnd-label" id="rndLabel">ROUND 1</div><div class="rnd-type" id="rndType">Standard</div></div>
-      <div class="jackpot-pill" id="jpPill">🏆 $0</div>
-    </div>
     <div class="timer-wrap"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
 
     <!-- Board -->
