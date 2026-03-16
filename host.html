@@ -162,6 +162,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .hist-meta{font-size:11px;color:var(--muted);line-height:1.7;}
 .hist-scores{font-size:11px;color:var(--muted);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);}
 
+/* Quick puzzle setup */
+.diff-btn{flex:1;padding:6px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;text-align:center;transition:all .15s;}
+.diff-btn:hover{border-color:var(--gold);color:var(--gold);}
+.diff-btn.active{background:rgba(245,197,24,.12);border-color:rgba(245,197,24,.4);color:var(--gold);}
+.cat-tile{padding:9px 8px;border-radius:9px;border:1px solid var(--border);background:var(--surface3);cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.cat-tile:hover{border-color:var(--gold);transform:scale(1.02);}
+.cat-tile.selected{border-color:var(--gold);background:rgba(245,197,24,.1);}
+.cat-tile .ct-icon{font-size:20px;}
+.cat-tile .ct-label{font-size:11px;font-weight:700;color:var(--text);line-height:1.2;}
+.puzzle-pick-item{padding:8px 10px;background:var(--surface3);border-radius:7px;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;}
+.puzzle-pick-item:hover{border-color:var(--gold);}
+.puzzle-pick-item.selected{border-color:var(--gold);background:rgba(245,197,24,.08);}
+.ppi-text{flex:1;font-size:12px;font-weight:700;color:var(--text);}
+.ppi-diff{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;}
+.ppi-easy{background:rgba(39,174,96,.15);color:var(--green);}
+.ppi-medium{background:rgba(243,156,18,.15);color:var(--amber);}
+.ppi-hard{background:rgba(226,75,74,.15);color:var(--red);}
+
 .freeplay-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(142,68,173,.15);border:1px solid rgba(142,68,173,.3);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#9b59b6;margin-left:8px;}
 
 /* Fix 11: category vote panel */
@@ -306,24 +324,63 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       <button class="btn btn-ghost btn-sm" id="revealAllBtn" onclick="revealAll()" title="Light up the full board" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
     </div>
     <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:8px;border-color:rgba(52,152,219,.35);color:var(--blue);" onclick="startCategoryVote()">📊 Start Category Vote</button>
-    <div style="margin-bottom:5px;font-size:11px;color:var(--muted);">Set puzzle for this round:</div>
-    <input class="inp" id="puzzleInp" placeholder="PUZZLE TEXT (host only)" style="margin-bottom:5px;text-transform:uppercase;" oninput="previewPuzzle(this.value)">
-    <div id="puzzlePreview" style="display:none;background:#080816;border:1px solid rgba(245,197,24,.15);border-radius:7px;padding:7px 5px;margin-bottom:5px;">
-      <div id="previewGrid" style="display:flex;flex-direction:column;gap:2px;"></div>
-      <div id="previewMeta" style="font-size:10px;text-align:center;margin-top:3px;"></div>
+    <!-- Quick Setup -->
+    <div style="margin-bottom:8px;">
+
+      <!-- Difficulty filter -->
+      <div style="display:flex;gap:5px;margin-bottom:8px;" id="diffFilter">
+        <button class="diff-btn active" data-diff="easy" onclick="setDiff('easy',this)">😊 Easy</button>
+        <button class="diff-btn" data-diff="medium" onclick="setDiff('medium',this)">🔥 Medium</button>
+        <button class="diff-btn" data-diff="hard" onclick="setDiff('hard',this)">💀 Hard</button>
+        <button class="diff-btn" data-diff="all" onclick="setDiff('all',this)">🎲 All</button>
+      </div>
+
+      <!-- Category tiles -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;" id="catTiles"></div>
+
+      <!-- Puzzle picker for selected category -->
+      <div id="puzzlePickerWrap" style="display:none;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);" id="pickerLabel">Puzzles</div>
+          <button onclick="shufflePicker()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">🔀 Shuffle</button>
+        </div>
+        <div id="puzzlePicker" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+
+      <!-- Selected puzzle display -->
+      <div id="selectedPuzzleWrap" style="display:none;background:var(--surface3);border:1.5px solid rgba(245,197,24,.3);border-radius:9px;padding:10px 12px;margin-bottom:8px;">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Selected Puzzle</div>
+        <div id="selectedPuzzleText" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);letter-spacing:1px;margin-bottom:2px;"></div>
+        <div id="selectedPuzzleMeta" style="font-size:11px;color:var(--muted);"></div>
+        <div id="puzzlePreview" style="display:none;background:#080816;border:1px solid rgba(245,197,24,.1);border-radius:6px;padding:6px 4px;margin-top:6px;">
+          <div id="previewGrid" style="display:flex;flex-direction:column;gap:2px;"></div>
+          <div id="previewMeta" style="font-size:10px;text-align:center;margin-top:3px;"></div>
+        </div>
+      </div>
+
+      <!-- Round type -->
+      <select class="sel" id="roundTypeInp" style="width:100%;margin-bottom:7px;">
+        <option value="standard">Standard Round</option>
+        <option value="tossup">[!] Toss-Up</option>
+        <option value="speedup">🚀 Speed-Up</option>
+        <option value="bonus">🌟 Bonus Round</option>
+      </select>
+
+      <!-- Manual entry (collapsible) -->
+      <details id="manualEntryDetails" style="margin-bottom:7px;">
+        <summary style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 0;list-style:none;">✏️ Manual Entry</summary>
+        <div style="margin-top:7px;">
+          <input class="inp" id="puzzleInp" placeholder="TYPE PUZZLE TEXT..." style="margin-bottom:5px;text-transform:uppercase;font-size:14px;" oninput="previewPuzzle(this.value);onManualPuzzleInput(this.value)">
+          <input class="inp" id="categoryInp" placeholder="Category" style="margin-bottom:5px;font-size:14px;">
+        </div>
+      </details>
+
+      <!-- Hidden inputs kept for compatibility -->
+      <input type="hidden" id="puzzleInpHidden">
+      <input type="hidden" id="categoryInpHidden">
+
     </div>
-    <input class="inp" id="categoryInp" placeholder="Category (e.g. Phrase)" style="margin-bottom:5px;">
-    <select class="sel" id="roundTypeInp" style="width:100%;margin-bottom:7px;">
-      <option value="standard">Standard Round</option>
-      <option value="tossup">[!] Toss-Up</option>
-      <option value="speedup">🚀 Speed-Up</option>
-      <option value="bonus">🌟 Bonus Round</option>
-    </select>
-    <details id="bankDetails" style="margin-bottom:7px;" ontoggle="if(this.open)renderBank()">
-      <summary style="font-size:11px;color:var(--gold);cursor:pointer;padding:4px 0;list-style:none;">📚 Puzzle Bank (33 puzzles)</summary>
-      <div id="bankWrap" style="margin-top:7px;"></div>
-    </details>
-    <button class="btn btn-ghost btn-sm btn-full" onclick="setPuzzle()">Set Puzzle & Start Round</button>
+    <button class="btn btn-gold btn-sm btn-full" onclick="setPuzzle()" id="setPuzzleBtn" disabled>Set Puzzle & Start Round</button>
   </div>
 
   <!-- End game -->
@@ -1631,6 +1688,280 @@ window.hostReconnect = async function() {
     console.error('Reconnect failed:', e);
   }
 };
+
+
+// ══════════════════════════════════════════════════════════
+//  QUICK PUZZLE SETUP — Minnesota-themed bank
+// ══════════════════════════════════════════════════════════
+
+const QUICK_CATEGORIES = [
+  { id:'minnesota', icon:'🌨️', label:'Minnesota', color:'#2980b9' },
+  { id:'food',      icon:'🍔', label:'Food & Drink', color:'#e67e22' },
+  { id:'barlife',   icon:'🍺', label:'Bar Life', color:'#c0392b' },
+  { id:'music',     icon:'🎵', label:'Music', color:'#8e44ad' },
+  { id:'sports',    icon:'🏒', label:'Sports', color:'#27ae60' },
+  { id:'phrase',    icon:'💬', label:'Phrases', color:'#16a085' },
+  { id:'popculture',icon:'📺', label:'Pop Culture', color:'#e91e63' },
+  { id:'manual',    icon:'✏️', label:'Manual Entry', color:'#555577' },
+];
+
+// difficulty: easy=short/common, medium=moderate, hard=long/obscure
+const QUICK_PUZZLES = {
+  minnesota: [
+    {p:'MINNEAPOLIS',c:'Minnesota',d:'easy'},
+    {p:'SAINT PAUL',c:'Minnesota',d:'easy'},
+    {p:'LAND OF TEN THOUSAND LAKES',c:'Minnesota',d:'medium'},
+    {p:'MALL OF AMERICA',c:'Minnesota',d:'easy'},
+    {p:'THE BOUNDARY WATERS',c:'Minnesota',d:'medium'},
+    {p:'PRINCE WAS FROM MINNEAPOLIS',c:'Minnesota',d:'medium'},
+    {p:'LAKE MINNETONKA',c:'Minnesota',d:'easy'},
+    {p:'THE TWIN CITIES',c:'Minnesota',d:'easy'},
+    {p:'HOTDISH',c:'Minnesota',d:'easy'},
+    {p:'YA SURE YOU BETCHA',c:'Minnesota',d:'medium'},
+    {p:'MINNESOTA NICE',c:'Minnesota',d:'easy'},
+    {p:'JUCY LUCY',c:'Minnesota',d:'easy'},
+    {p:'THE BOUNDARY WATERS CANOE AREA',c:'Minnesota',d:'hard'},
+    {p:'NORTH STAR STATE',c:'Minnesota',d:'medium'},
+    {p:'SCANDINAVIAN HERITAGE',c:'Minnesota',d:'hard'},
+    {p:'LUTEFISK',c:'Minnesota',d:'medium'},
+    {p:'DULUTH',c:'Minnesota',d:'easy'},
+    {p:'THE IRON RANGE',c:'Minnesota',d:'medium'},
+    {p:'LAKE SUPERIOR',c:'Minnesota',d:'easy'},
+    {p:'FIRST AVENUE',c:'Minnesota',d:'medium'},
+  ],
+  food: [
+    {p:'DEEP DISH PIZZA',c:'Food & Drink',d:'easy'},
+    {p:'CHICKEN TENDERS',c:'Food & Drink',d:'easy'},
+    {p:'GUACAMOLE',c:'Food & Drink',d:'easy'},
+    {p:'LOADED NACHOS',c:'Food & Drink',d:'easy'},
+    {p:'FISH AND CHIPS',c:'Food & Drink',d:'easy'},
+    {p:'BUFFALO WILD WINGS',c:'Food & Drink',d:'medium'},
+    {p:'HAPPY HOUR SPECIALS',c:'Food & Drink',d:'medium'},
+    {p:'CRAFT BEER FLIGHT',c:'Food & Drink',d:'medium'},
+    {p:'OLD FASHIONED',c:'Food & Drink',d:'easy'},
+    {p:'WHISKEY ON THE ROCKS',c:'Food & Drink',d:'medium'},
+    {p:'PITCHER OF BEER',c:'Food & Drink',d:'easy'},
+    {p:'LATE NIGHT TACO RUN',c:'Food & Drink',d:'medium'},
+    {p:'BOTTOMLESS MIMOSAS',c:'Food & Drink',d:'medium'},
+    {p:'CHEESE CURD',c:'Food & Drink',d:'easy'},
+    {p:'WALLEYE SANDWICH',c:'Food & Drink',d:'medium'},
+    {p:'BLOODY MARY BAR',c:'Food & Drink',d:'medium'},
+    {p:'TWO FOR ONE TUESDAY',c:'Food & Drink',d:'hard'},
+    {p:'JALAPENO POPPER',c:'Food & Drink',d:'medium'},
+  ],
+  barlife: [
+    {p:'LAST CALL',c:'Bar Life',d:'easy'},
+    {p:'SHOTS SHOTS SHOTS',c:'Bar Life',d:'easy'},
+    {p:'CLOSING TIME',c:'Bar Life',d:'easy'},
+    {p:'THE BAR TAB',c:'Bar Life',d:'easy'},
+    {p:'DESIGNATED DRIVER',c:'Bar Life',d:'easy'},
+    {p:'KARAOKE NIGHT',c:'Bar Life',d:'easy'},
+    {p:'OPEN BAR',c:'Bar Life',d:'easy'},
+    {p:'BAR TRIVIA',c:'Bar Life',d:'easy'},
+    {p:'JUKEBOX HERO',c:'Bar Life',d:'medium'},
+    {p:'DOLLAR BEER NIGHT',c:'Bar Life',d:'medium'},
+    {p:'THE DIVE BAR',c:'Bar Life',d:'easy'},
+    {p:'BEER PONG CHAMPION',c:'Bar Life',d:'medium'},
+    {p:'NEVER HAVE I EVER',c:'Bar Life',d:'medium'},
+    {p:'PREGAMING',c:'Bar Life',d:'easy'},
+    {p:'WALK OF SHAME',c:'Bar Life',d:'medium'},
+    {p:'LIQUID COURAGE',c:'Bar Life',d:'medium'},
+    {p:'SPLITTING THE CHECK',c:'Bar Life',d:'hard'},
+    {p:'ROUND IS ON ME',c:'Bar Life',d:'medium'},
+  ],
+  music: [
+    {p:'PURPLE RAIN',c:'Music',d:'easy'},
+    {p:'BORN TO RUN',c:'Music',d:'easy'},
+    {p:'HOTEL CALIFORNIA',c:'Music',d:'easy'},
+    {p:'BOHEMIAN RHAPSODY',c:'Music',d:'easy'},
+    {p:'SWEET HOME ALABAMA',c:'Music',d:'easy'},
+    {p:'DONT STOP BELIEVIN',c:'Music',d:'easy'},
+    {p:'LIVIN ON A PRAYER',c:'Music',d:'easy'},
+    {p:'LIVING AFTER MIDNIGHT',c:'Music',d:'medium'},
+    {p:'SMELLS LIKE TEEN SPIRIT',c:'Music',d:'medium'},
+    {p:'TAKE ME HOME COUNTRY ROADS',c:'Music',d:'medium'},
+    {p:'THUNDER ROAD',c:'Music',d:'medium'},
+    {p:'PIANO MAN',c:'Music',d:'easy'},
+    {p:'HIGHWAY TO HELL',c:'Music',d:'easy'},
+    {p:'BROWN EYED GIRL',c:'Music',d:'easy'},
+    {p:'AFRICA BY TOTO',c:'Music',d:'medium'},
+    {p:'WONDERWALL',c:'Music',d:'easy'},
+    {p:'RASPBERRY BERET',c:'Music',d:'medium'},
+    {p:'WHEN DOVES CRY',c:'Music',d:'medium'},
+    {p:'LETS GO CRAZY',c:'Music',d:'medium'},
+  ],
+  sports: [
+    {p:'MINNESOTA VIKINGS',c:'Sports',d:'easy'},
+    {p:'MINNESOTA TWINS',c:'Sports',d:'easy'},
+    {p:'MINNESOTA WILD',c:'Sports',d:'easy'},
+    {p:'MINNESOTA TIMBERWOLVES',c:'Sports',d:'easy'},
+    {p:'MINNESOTA LYNX',c:'Sports',d:'easy'},
+    {p:'US BANK STADIUM',c:'Sports',d:'medium'},
+    {p:'TARGET FIELD',c:'Sports',d:'medium'},
+    {p:'XCEL ENERGY CENTER',c:'Sports',d:'medium'},
+    {p:'SUPER BOWL',c:'Sports',d:'easy'},
+    {p:'THE MIRACLE ON ICE',c:'Sports',d:'medium'},
+    {p:'KIRBY PUCKETT',c:'Sports',d:'medium'},
+    {p:'FRAN TARKENTON',c:'Sports',d:'hard'},
+    {p:'MINNESOTA GOLDEN GOPHERS',c:'Sports',d:'medium'},
+    {p:'THE METRODOME',c:'Sports',d:'medium'},
+    {p:'BRETT FAVRE',c:'Sports',d:'easy'},
+    {p:'CHARLES BARKLEY',c:'Sports',d:'medium'},
+  ],
+  phrase: [
+    {p:'NO PAIN NO GAIN',c:'Phrase',d:'easy'},
+    {p:'LIVING ON THE EDGE',c:'Phrase',d:'easy'},
+    {p:'THE MORE THE MERRIER',c:'Phrase',d:'easy'},
+    {p:'CAUGHT RED HANDED',c:'Phrase',d:'easy'},
+    {p:'BITE THE BULLET',c:'Phrase',d:'easy'},
+    {p:'BREAK THE ICE',c:'Phrase',d:'easy'},
+    {p:'BURN THE MIDNIGHT OIL',c:'Phrase',d:'medium'},
+    {p:'EVERY CLOUD HAS A SILVER LINING',c:'Phrase',d:'medium'},
+    {p:'ACTIONS SPEAK LOUDER THAN WORDS',c:'Phrase',d:'medium'},
+    {p:'DONT JUDGE A BOOK BY ITS COVER',c:'Phrase',d:'hard'},
+    {p:'BARKING UP THE WRONG TREE',c:'Phrase',d:'medium'},
+    {p:'BEATING AROUND THE BUSH',c:'Phrase',d:'medium'},
+    {p:'LETTING THE CAT OUT OF THE BAG',c:'Phrase',d:'hard'},
+    {p:'HIT THE NAIL ON THE HEAD',c:'Phrase',d:'medium'},
+    {p:'KILL TWO BIRDS WITH ONE STONE',c:'Phrase',d:'hard'},
+    {p:'BITE OFF MORE THAN YOU CAN CHEW',c:'Phrase',d:'hard'},
+    {p:'TURN IT UP',c:'Phrase',d:'easy'},
+    {p:'PARTY LIKE THERES NO TOMORROW',c:'Phrase',d:'medium'},
+  ],
+  popculture: [
+    {p:'STRANGER THINGS',c:'Pop Culture',d:'easy'},
+    {p:'BREAKING BAD',c:'Pop Culture',d:'easy'},
+    {p:'THE OFFICE',c:'Pop Culture',d:'easy'},
+    {p:'GAME OF THRONES',c:'Pop Culture',d:'easy'},
+    {p:'TAYLOR SWIFT',c:'Pop Culture',d:'easy'},
+    {p:'TIKTOK MADE ME BUY IT',c:'Pop Culture',d:'medium'},
+    {p:'NETFLIX AND CHILL',c:'Pop Culture',d:'easy'},
+    {p:'KEEPING UP WITH THE KARDASHIANS',c:'Pop Culture',d:'hard'},
+    {p:'THE SUPER MARIO BROTHERS',c:'Pop Culture',d:'medium'},
+    {p:'SATURDAY NIGHT FEVER',c:'Pop Culture',d:'medium'},
+    {p:'SCHITTS CREEK',c:'Pop Culture',d:'medium'},
+    {p:'YELLOWSTONE',c:'Pop Culture',d:'easy'},
+    {p:'DUDE WHERE IS MY CAR',c:'Pop Culture',d:'medium'},
+    {p:'ANCHORMAN THE LEGEND OF RON BURGUNDY',c:'Pop Culture',d:'hard'},
+    {p:'HAPPY GILMORE',c:'Pop Culture',d:'easy'},
+    {p:'STEP BROTHERS',c:'Pop Culture',d:'easy'},
+    {p:'TALLADEGA NIGHTS',c:'Pop Culture',d:'medium'},
+    {p:'OLD SCHOOL',c:'Pop Culture',d:'easy'},
+  ],
+};
+
+let currentDiff = 'easy';
+let currentCat = null;
+let selectedPuzzle = null;
+let currentPickerList = [];
+
+function setDiff(diff, btn) {
+  currentDiff = diff;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (currentCat && currentCat !== 'manual') renderPuzzlePicker(currentCat);
+}
+
+function renderCatTiles() {
+  const wrap = document.getElementById('catTiles');
+  if (!wrap) return;
+  wrap.innerHTML = QUICK_CATEGORIES.map(cat => `
+    <div class="cat-tile ${currentCat===cat.id?'selected':''}" onclick="selectCategory('${cat.id}')">
+      <div class="ct-icon">${cat.icon}</div>
+      <div class="ct-label">${cat.label}</div>
+    </div>`).join('');
+}
+
+function selectCategory(id) {
+  currentCat = id;
+  document.querySelectorAll('.cat-tile').forEach(t => t.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  if (id === 'manual') {
+    document.getElementById('puzzlePickerWrap').style.display = 'none';
+    document.getElementById('selectedPuzzleWrap').style.display = 'none';
+    const det = document.getElementById('manualEntryDetails');
+    if (det) det.open = true;
+    selectedPuzzle = null;
+    document.getElementById('setPuzzleBtn').disabled = false;
+    return;
+  }
+  renderPuzzlePicker(id);
+}
+
+function renderPuzzlePicker(catId) {
+  const wrap = document.getElementById('puzzlePickerWrap');
+  const list = document.getElementById('puzzlePicker');
+  const label = document.getElementById('pickerLabel');
+  const cat = QUICK_CATEGORIES.find(c => c.id === catId);
+  wrap.style.display = 'block';
+  label.textContent = (cat ? cat.label : catId) + ' puzzles';
+
+  let puzzles = (QUICK_PUZZLES[catId] || []).filter(p => {
+    if (currentDiff === 'all') return true;
+    return p.d === currentDiff;
+  });
+
+  // If filter returns nothing, show all
+  if (!puzzles.length) puzzles = QUICK_PUZZLES[catId] || [];
+  currentPickerList = [...puzzles];
+
+  list.innerHTML = puzzles.map((p, i) => `
+    <div class="puzzle-pick-item ${selectedPuzzle&&selectedPuzzle.p===p.p?'selected':''}"
+         onclick="selectPuzzle(${i})">
+      <div class="ppi-text">${p.p}</div>
+      <div class="ppi-diff ppi-${p.d}">${p.d}</div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">No puzzles at this difficulty -- try All</div>';
+}
+
+function selectPuzzle(idx) {
+  const p = currentPickerList[idx];
+  if (!p) return;
+  selectedPuzzle = p;
+
+  // Update selected display
+  document.getElementById('selectedPuzzleWrap').style.display = 'block';
+  document.getElementById('selectedPuzzleText').textContent = p.p;
+  document.getElementById('selectedPuzzleMeta').textContent = p.c + '  |  ' + p.d;
+
+  // Sync to hidden inputs AND manual inputs
+  document.getElementById('puzzleInp').value = p.p;
+  document.getElementById('categoryInp').value = p.c;
+
+  // Show tile preview
+  previewPuzzle(p.p);
+
+  // Enable set puzzle button
+  document.getElementById('setPuzzleBtn').disabled = false;
+
+  // Highlight in list
+  document.querySelectorAll('.puzzle-pick-item').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+}
+
+window.shufflePicker = function() {
+  currentPickerList.sort(() => Math.random() - 0.5);
+  const list = document.getElementById('puzzlePicker');
+  list.innerHTML = currentPickerList.map((p, i) => `
+    <div class="puzzle-pick-item ${selectedPuzzle&&selectedPuzzle.p===p.p?'selected':''}"
+         onclick="selectPuzzle(${i})">
+      <div class="ppi-text">${p.p}</div>
+      <div class="ppi-diff ppi-${p.d}">${p.d}</div>
+    </div>`).join('');
+};
+
+window.onManualPuzzleInput = function(val) {
+  selectedPuzzle = { p: val.toUpperCase(), c: document.getElementById('categoryInp').value || 'Phrase', d: 'medium' };
+  document.getElementById('setPuzzleBtn').disabled = !val.trim();
+};
+
+// Init on page load
+setTimeout(() => {
+  renderCatTiles();
+  // Default to Minnesota Easy
+  selectCategory('minnesota');
+  setDiff('easy', document.querySelector('.diff-btn'));
+}, 800);
 
 window.setPuzzle=async function(){
   const puzzle=document.getElementById('puzzleInp').value.trim().toUpperCase();
