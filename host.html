@@ -2076,17 +2076,25 @@ function renderCatTiles() {
   const wrap = document.getElementById('catTiles');
   if (!wrap) return;
   wrap.innerHTML = QUICK_CATEGORIES.map(cat =>
-    '<div class="cat-tile ' + (currentCat===cat.id?'selected':'') + '" onclick="selectCategory(\'' + cat.id + '\',this)">' +
+    '<div class="cat-tile ' + (currentCat===cat.id?'selected':'') + '" data-catid="' + cat.id + '">' +
     '<div class="ct-icon">' + cat.icon + '</div>' +
     '<div class="ct-label">' + cat.label + '</div>' +
     '</div>'
   ).join('');
+  // Attach click listeners properly so 'this' is always the tile
+  wrap.querySelectorAll('.cat-tile').forEach(tile => {
+    tile.addEventListener('click', function() {
+      selectCategory(this.dataset.catid, this);
+    });
+  });
 }
 
 function selectCategory(id, tileEl) {
   currentCat = id;
   document.querySelectorAll('.cat-tile').forEach(t => t.classList.remove('selected'));
-  if (tileEl) tileEl.classList.add('selected');
+  // Always find the actual .cat-tile wrapper even if a child element was passed
+  const tile = tileEl ? (tileEl.closest ? tileEl.closest('.cat-tile') : tileEl) : null;
+  if (tile) tile.classList.add('selected');
   // Hide all sub-panels
   const pickerWrap = document.getElementById('puzzlePickerWrap');
   const aiWrap = document.getElementById('aiGeneratorWrap');
@@ -2172,9 +2180,8 @@ window.onManualPuzzleInput = function(val) {
 // Init on page load
 setTimeout(() => {
   renderCatTiles();
-  // Default to Minnesota Easy
-  const firstTile = document.querySelector('.cat-tile');
-  selectCategory('minnesota', document.querySelector('.cat-tile'));
+  // Default to Minnesota Easy -- tiles now have event listeners, just call selectCategory directly
+  selectCategory('minnesota', document.querySelector('[data-catid="minnesota"]'));
   setDiff('easy', document.querySelector('.diff-btn'));
 }, 800);
 
