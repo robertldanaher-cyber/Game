@@ -180,6 +180,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .ppi-medium{background:rgba(243,156,18,.15);color:var(--amber);}
 .ppi-hard{background:rgba(226,75,74,.15);color:var(--red);}
 
+/* Restart + Undo buttons */
+.btn-amber{background:rgba(243,156,18,.15);border:1px solid rgba(243,156,18,.35);color:var(--amber);}
+.btn-amber:hover{background:rgba(243,156,18,.25);}
+.undo-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid rgba(245,197,24,.3);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;color:var(--gold);z-index:400;opacity:0;transition:opacity .3s;pointer-events:none;}
+.undo-toast.show{opacity:1;}
+
 .freeplay-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(142,68,173,.15);border:1px solid rgba(142,68,173,.3);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#9b59b6;margin-left:8px;}
 
 /* Fix 11: category vote panel */
@@ -405,8 +411,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
   <!-- End game -->
   <div class="panel" id="endGamePanel" style="display:none;">
+    <div class="btn-row" style="margin-bottom:7px;">
+      <button class="btn btn-amber btn-sm" onclick="undoLastAction()" id="undoBtn" title="Undo last scored action" disabled>↩ Undo</button>
+      <button class="btn btn-ghost btn-sm" onclick="restartGame()" style="border-color:rgba(39,174,96,.35);color:var(--green);">🔄 Restart</button>
+    </div>
     <button class="btn btn-red btn-full" onclick="endGame()">🏁 END GAME & CROWN WINNER</button>
   </div>
+  <div class="undo-toast" id="undoToast"></div>
 
   <!-- #8: Game history -->
   <div class="panel" id="historyPanel">
@@ -935,6 +946,7 @@ async function handleSpinResult(wedge){
   } else if(val==='bankrupt'){
     valEl.textContent='BANKRUPT 💀';valEl.style.color='var(--red)';subEl.textContent='Lose all round points!';
     setAnnounce(`BANKRUPT! ${player.name} loses their round points! 💀`,'Turn ends. They must CHUG!');
+    snapshotState(player.name + ' BANKRUPT');
     addLog(`💀 ${player.name} BANKRUPT`);playBankrupt();
     await sendDrinkInternal('chug',turnId,`${player.name} hit Bankrupt  --  CHUG!`);
     await addJPInternal(1);
@@ -1144,6 +1156,7 @@ async function processGuess(letter,playerId,g){
   }
 
   if(hit){
+    snapshotState('Guess ' + letter + ' (' + count + ' hit' + (count>1?'s':'') + ')');
     upd[`players/${playerId}/roundScore`]=(player?.roundScore||0)+earned;
     upd.dingSignal={ts:Date.now(),type:'ding',count};
     if(isSpeedUp){
@@ -1188,6 +1201,7 @@ function checkAutoSolve(revealedStr,puzzle,playerId,g,newRoundScore){
 }
 
 async function handleFullySolvedBoard(playerId,roundScore){
+  snapshotState('Board solved by ' + (gameData?.players?.[playerId]?.name || '?'));
   if(!gameData)return;
   const player=gameData.players?.[playerId];
   const updates={[`players/${playerId}/totalScore`]:(player?.totalScore||0)+roundScore,[`players/${playerId}/roundScore`]:0,roundSolved:true,solveResult:{correct:true,name:player?.name||'?',ts:Date.now()}};
@@ -2264,6 +2278,112 @@ window.clearHistory = function() {
 // Call renderHistory on load
 setTimeout(renderHistory, 600);
 
+
+// ══ UNDO + RESTART ══════════════════════════════════════════
+let undoStack = []; // array of Firebase game state snapshots
+const UNDO_MAX = 5; // keep last 5 snapshots
+
+function snapshotState(label) {
+  if (!gameData || !gameId) return;
+  // Deep copy the fields that matter for undo
+  const snap = {
+    label,
+    ts: Date.now(),
+    state: {
+      players: JSON.parse(JSON.stringify(gameData.players || {})),
+      calledLetters: JSON.parse(JSON.stringify(gameData.calledLetters || {})),
+      revealedLetters: gameData.revealedLetters || '',
+      currentTurnPlayerId: gameData.currentTurnPlayerId || null,
+      currentTurnIndex: gameData.currentTurnIndex || 0,
+      turnPhase: gameData.turnPhase || 'spin',
+      currentSpinValue: gameData.currentSpinValue || null,
+      roundSolved: gameData.roundSolved || false,
+      jackpot: gameData.jackpot || 0,
+    }
+  };
+  undoStack.push(snap);
+  if (undoStack.length > UNDO_MAX) undoStack.shift();
+  // Enable undo button
+  const btn = document.getElementById('undoBtn');
+  if (btn) { btn.disabled = false; btn.title = 'Undo: ' + label; }
+  addLog('📸 Snapshot: ' + label);
+}
+
+window.undoLastAction = async function() {
+  if (!undoStack.length) { toast('Nothing to undo!'); return; }
+  if (!confirm('Undo "' + undoStack[undoStack.length-1].label + '"? This will restore the previous game state.')) return;
+  const snap = undoStack.pop();
+  const updates = {};
+  // Restore player scores and state
+  Object.entries(snap.state.players).forEach(([id, p]) => {
+    updates['players/' + id + '/roundScore'] = p.roundScore || 0;
+    updates['players/' + id + '/totalScore'] = p.totalScore || 0;
+    updates['players/' + id + '/drinks'] = p.drinks || 0;
+  });
+  updates.calledLetters = snap.state.calledLetters;
+  updates.revealedLetters = snap.state.revealedLetters;
+  updates.currentTurnPlayerId = snap.state.currentTurnPlayerId;
+  updates.currentTurnIndex = snap.state.currentTurnIndex;
+  updates.turnPhase = snap.state.turnPhase;
+  updates.currentSpinValue = snap.state.currentSpinValue;
+  updates.roundSolved = snap.state.roundSolved;
+  updates.jackpot = snap.state.jackpot;
+
+  await update(ref(db, 'games/' + gameId), updates);
+  addLog('↩ Undid: ' + snap.label);
+  showUndoToast('Undid: ' + snap.label);
+
+  if (!undoStack.length) {
+    const btn = document.getElementById('undoBtn');
+    if (btn) { btn.disabled = true; btn.title = 'Nothing to undo'; }
+  }
+};
+
+function showUndoToast(msg) {
+  const t = document.getElementById('undoToast');
+  if (!t) return;
+  t.textContent = '↩ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+window.restartGame = async function() {
+  if (!gameId || !gameData) return;
+  if (!confirm('Restart game? All scores will reset to zero. Players stay connected.')) return;
+  const players = gameData.players || {};
+  const updates = {};
+  // Reset all player scores
+  Object.keys(players).forEach(id => {
+    updates['players/' + id + '/roundScore'] = 0;
+    updates['players/' + id + '/totalScore'] = 0;
+    updates['players/' + id + '/drinks'] = 0;
+    updates['players/' + id + '/wildcard'] = false;
+  });
+  // Reset round state
+  updates.currentRound = 1;
+  updates.roundSolved = false;
+  updates.calledLetters = {};
+  updates.revealedLetters = '';
+  updates.currentPuzzle = '';
+  updates.currentCategory = '';
+  updates.turnPhase = 'spin';
+  updates.currentSpinValue = null;
+  updates.currentTurnPlayerId = null;
+  updates.currentTurnIndex = 0;
+  updates.jackpot = gameData.ante || 5;
+  updates.status = 'playing';
+  updates.categoryVote = null;
+  updates.leaderboardSplash = null;
+
+  await update(ref(db, 'games/' + gameId), updates);
+  undoStack = [];
+  const btn = document.getElementById('undoBtn');
+  if (btn) btn.disabled = true;
+  setAnnounce('Game Restarted!', 'Scores reset -- enter a new puzzle to begin.');
+  addLog('🔄 Game restarted by host');
+  toast('Game restarted! All scores reset to zero.');
+};
+
 window.endGame=async function(){
   if(!gameId)return;
   stopAutoReveal();
@@ -2527,6 +2647,8 @@ function updateIpadScores() {
 
   
   <div class="ipad-section">
+      <button class="btn btn-amber btn-full" style="margin-bottom:6px;" onclick="undoLastAction()">Undo Last Action</button>
+      <button class="btn btn-ghost btn-full" style="margin-bottom:6px;border-color:rgba(39,174,96,.35);color:var(--green);" onclick="restartGame()">Restart Game</button>
     <button class="btn btn-red btn-full" onclick="endGame()">🏁 END GAME</button>
   </div>
 </div>
