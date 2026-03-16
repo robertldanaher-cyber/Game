@@ -345,26 +345,6 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;" id="catTiles"></div>
 
       <!-- Puzzle picker for selected category -->
-      <!-- AI Generator panel -->
-      <div id="aiGeneratorWrap" style="display:none;margin-bottom:8px;">
-        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">🤖 AI Puzzle Generator</div>
-        <input class="inp" id="aiTopicInp" placeholder="Topic (e.g. Minnesota winters, breakups, bad decisions...)" style="margin-bottom:6px;font-size:13px;">
-        <div style="display:flex;gap:6px;margin-bottom:7px;">
-          <select class="sel" id="aiDiffSel" style="flex:1;">
-            <option value="easy">Easy</option>
-            <option value="medium" selected>Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-          <select class="sel" id="aiStyleSel" style="flex:1;">
-            <option value="clean">Clean</option>
-            <option value="edgy">Edgy</option>
-            <option value="adult">Adult/Dark</option>
-          </select>
-        </div>
-        <button class="btn btn-gold btn-sm btn-full" id="aiGenBtn" onclick="generateAIPuzzles()">🤖 Generate Puzzles</button>
-        <div id="aiResults" style="margin-top:8px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
-      </div>
-
       <div id="puzzlePickerWrap" style="display:none;margin-bottom:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
           <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);" id="pickerLabel">Puzzles</div>
@@ -1742,7 +1722,7 @@ const QUICK_CATEGORIES = [
   { id:'sports',    icon:'🏒', label:'Sports', color:'#27ae60' },
   { id:'adulth',    icon:'🔞', label:'Adult Humor', color:'#9b59b6' },
   { id:'popculture',icon:'📺', label:'Pop Culture', color:'#e91e63' },
-  { id:'ai',        icon:'🤖', label:'AI Generate', color:'#F5C518' },
+  { id:'dark',      icon:'😈', label:'Dark Humor', color:'#c0392b' },
   { id:'manual',    icon:'✏️', label:'Manual Entry', color:'#555577' },
 ];
 
@@ -1939,124 +1919,164 @@ const QUICK_PUZZLES = {
     {p:'I AM THE ONE WHO KNOCKS',c:'Pop Culture',d:'hard'},
   ],
 
-  ai: [], // filled dynamically
-};
+  dark: [
+    // Easy
+    {p:'WALKS INTO A BAR',c:'Dark Humor',d:'easy'},
+    {p:'TOO SOON',c:'Dark Humor',d:'easy'},
+    {p:'DUMPSTER FIRE',c:'Dark Humor',d:'easy'},
+    {p:'ROCK BOTTOM',c:'Dark Humor',d:'easy'},
+    {p:'WORST CASE SCENARIO',c:'Dark Humor',d:'easy'},
+    {p:'POOR LIFE CHOICES',c:'Dark Humor',d:'easy'},
+    {p:'ROCK BOTTOM HAS A BASEMENT',c:'Dark Humor',d:'easy'},
+    {p:'THIS IS FINE',c:'Dark Humor',d:'easy'},
+    // Medium
+    {p:'UNSUPERVISED ADULTS',c:'Dark Humor',d:'medium'},
+    {p:'MY THERAPIST QUIT',c:'Dark Humor',d:'medium'},
+    {p:'FUNCTIONAL DISASTER',c:'Dark Humor',d:'medium'},
+    {p:'WINNING AT LOSING',c:'Dark Humor',d:'medium'},
+    {p:'PROFESSIONALLY IRRESPONSIBLE',c:'Dark Humor',d:'medium'},
+    {p:'HOLD MY BEER AND WATCH THIS',c:'Dark Humor',d:'medium'},
+    {p:'I TURNED OUT FINE AND I WILL FIGHT YOU',c:'Dark Humor',d:'medium'},
+    {p:'ADULTING IS A SCAM',c:'Dark Humor',d:'medium'},
+    {p:'MY SPIRIT ANIMAL IS A TRASH PANDA',c:'Dark Humor',d:'medium'},
+    // Hard
+    {p:'QUESTIONABLE DECISIONS MADE IN CONFIDENCE',c:'Dark Humor',d:'hard'},
+    {p:'NOT MY CIRCUS NOT MY MONKEYS BUT HERE I AM',c:'Dark Humor',d:'hard'},
+    {p:'I HAVE MADE A SERIES OF SMALL MISTAKES',c:'Dark Humor',d:'hard'},
+    {p:'TECHNICALLY IT IS NOT ILLEGAL',c:'Dark Humor',d:'hard'},
+    {p:'THE AUDACITY OF THIS GARBAGE FIRE',c:'Dark Humor',d:'hard'},
+  ],
 
-// ── AI PUZZLE GENERATOR ──
-let aiGenerating = false;
-let aiGeneratedPuzzles = [];
+  rap: [
+    // Easy
+    {p:'NOTHIN BUT A G THANG',c:'90s-2000s Rap',d:'easy'},
+    {p:'FORGET ABOUT DRE',c:'90s-2000s Rap',d:'easy'},
+    {p:'CALIFORNIA LOVE',c:'90s-2000s Rap',d:'easy'},
+    {p:'GETTIN JIGGY WIT IT',c:'90s-2000s Rap',d:'easy'},
+    {p:'MO MONEY MO PROBLEMS',c:'90s-2000s Rap',d:'easy'},
+    {p:'LOSE YOURSELF',c:'90s-2000s Rap',d:'easy'},
+    {p:'IN DA CLUB',c:'90s-2000s Rap',d:'easy'},
+    {p:'DROP IT LIKE ITS HOT',c:'90s-2000s Rap',d:'easy'},
+    {p:'CHANGES',c:'90s-2000s Rap',d:'easy'},
+    {p:'GIN AND JUICE',c:'90s-2000s Rap',d:'easy'},
+    {p:'HYPNOTIZE',c:'90s-2000s Rap',d:'easy'},
+    {p:'STILL DRE',c:'90s-2000s Rap',d:'easy'},
+    // Medium
+    {p:'NUTHIN BUT A G THANG BABY',c:'90s-2000s Rap',d:'medium'},
+    {p:'BIGGIE SMALLS IS THE ILLEST',c:'90s-2000s Rap',d:'medium'},
+    {p:'ALL EYEZ ON ME',c:'90s-2000s Rap',d:'medium'},
+    {p:'THE REAL SLIM SHADY',c:'90s-2000s Rap',d:'medium'},
+    {p:'IT WAS ALL A DREAM',c:'90s-2000s Rap',d:'medium'},
+    {p:'REGULATE',c:'90s-2000s Rap',d:'medium'},
+    {p:'RUFF RYDERS ANTHEM',c:'90s-2000s Rap',d:'medium'},
+    {p:'SHIMMY SHIMMY YA',c:'90s-2000s Rap',d:'medium'},
+    {p:'TRIUMPH',c:'90s-2000s Rap',d:'medium'},
+    {p:'SHOOK ONES PART TWO',c:'90s-2000s Rap',d:'medium'},
+    {p:'SOUL FOOD',c:'90s-2000s Rap',d:'medium'},
+    {p:'THIEVES IN THE NIGHT',c:'90s-2000s Rap',d:'medium'},
+    // Hard
+    {p:'FOUR THREE TWO ONE',c:'90s-2000s Rap',d:'hard'},
+    {p:'IF I RULED THE WORLD',c:'90s-2000s Rap',d:'hard'},
+    {p:'TWENTY FOUR HOURS FROM TULSA',c:'90s-2000s Rap',d:'hard'},
+    {p:'READY TO DIE',c:'90s-2000s Rap',d:'hard'},
+    {p:'AQUEMINI',c:'90s-2000s Rap',d:'hard'},
+    {p:'KICK PUSH',c:'90s-2000s Rap',d:'hard'},
+  ],
 
-window.generateAIPuzzles = async function() {
-  if (aiGenerating) return;
-  if (aiGenerating) return;
-  const topicInp = document.getElementById('aiTopicInp');
-  const diffSel = document.getElementById('aiDiffSel');
-  const styleSel = document.getElementById('aiStyleSel');
-  const topic = topicInp ? topicInp.value.trim() : '';
-  const diff = diffSel ? diffSel.value : 'medium';
-  const style = styleSel ? styleSel.value : 'clean';
+  taglines: [
+    // Easy
+    {p:'IN SPACE NO ONE CAN HEAR YOU SCREAM',c:'Movie Taglines',d:'easy'},
+    {p:'JUST WHEN YOU THOUGHT IT WAS SAFE TO GO BACK IN THE WATER',c:'Movie Taglines',d:'easy'},
+    {p:'BE AFRAID BE VERY AFRAID',c:'Movie Taglines',d:'easy'},
+    {p:'WHY SO SERIOUS',c:'Movie Taglines',d:'easy'},
+    {p:'TO INFINITY AND BEYOND',c:'Movie Taglines',d:'easy'},
+    {p:'WITH GREAT POWER COMES GREAT RESPONSIBILITY',c:'Movie Taglines',d:'easy'},
+    {p:'LIFE IS LIKE A BOX OF CHOCOLATES',c:'Movie Taglines',d:'easy'},
+    {p:'HOUSTON WE HAVE A PROBLEM',c:'Movie Taglines',d:'easy'},
+    {p:'YOU CANT HANDLE THE TRUTH',c:'Movie Taglines',d:'easy'},
+    {p:'ILL BE BACK',c:'Movie Taglines',d:'easy'},
+    // Medium
+    {p:'THEY LIVE WE SLEEP',c:'Movie Taglines',d:'medium'},
+    {p:'ON EVERY STREET IN EVERY CITY',c:'Movie Taglines',d:'medium'},
+    {p:'EARTH FIRE AIR WATER HEART',c:'Movie Taglines',d:'medium'},
+    {p:'FIVE CRIMINALS ONE LINE UP NO COINCIDENCE',c:'Movie Taglines',d:'medium'},
+    {p:'REALITY IS A THING OF THE PAST',c:'Movie Taglines',d:'medium'},
+    {p:'FIGHT THE FUTURE',c:'Movie Taglines',d:'medium'},
+    {p:'THE TRUTH IS OUT THERE',c:'Movie Taglines',d:'medium'},
+    {p:'AN ADVENTURE THIRTY MILLION YEARS IN THE MAKING',c:'Movie Taglines',d:'medium'},
+    {p:'SOME HUMANS ARENT HUMAN',c:'Movie Taglines',d:'medium'},
+    // Hard
+    {p:'WHAT IS MIND DOES NOT MATTER WHAT IS MATTER NEVER MIND',c:'Movie Taglines',d:'hard'},
+    {p:'EVERYBODY WANTS TO BE FOUND',c:'Movie Taglines',d:'hard'},
+    {p:'THE SKY IS FALLING AND IT SUITS YOU PERFECTLY',c:'Movie Taglines',d:'hard'},
+    {p:'FEAR CAN HOLD YOU PRISONER HOPE CAN SET YOU FREE',c:'Movie Taglines',d:'hard'},
+    {p:'SHE BROUGHT A LOT OF TROUBLE WITH HER',c:'Movie Taglines',d:'hard'},
+  ],
 
-  if (!topic) { toast('Enter a topic to generate puzzles!'); return; }
+  oneliners: [
+    // Easy
+    {p:'ILL HAVE WHAT SHE IS HAVING',c:'Epic One Liners',d:'easy'},
+    {p:'YOU TALKING TO ME',c:'Epic One Liners',d:'easy'},
+    {p:'GO AHEAD MAKE MY DAY',c:'Epic One Liners',d:'easy'},
+    {p:'MAY THE FORCE BE WITH YOU',c:'Epic One Liners',d:'easy'},
+    {p:'HASTA LA VISTA BABY',c:'Epic One Liners',d:'easy'},
+    {p:'HERE IS LOOKING AT YOU KID',c:'Epic One Liners',d:'easy'},
+    {p:'YIPPEE KI YAY',c:'Epic One Liners',d:'easy'},
+    {p:'GET TO THE CHOPPER',c:'Epic One Liners',d:'easy'},
+    {p:'SAY HELLO TO MY LITTLE FRIEND',c:'Epic One Liners',d:'easy'},
+    {p:'I FEEL THE NEED THE NEED FOR SPEED',c:'Epic One Liners',d:'easy'},
+    {p:'NOBODY PUTS BABY IN A CORNER',c:'Epic One Liners',d:'easy'},
+    // Medium
+    {p:'THEY MAY TAKE OUR LIVES BUT THEY WILL NEVER TAKE OUR FREEDOM',c:'Epic One Liners',d:'medium'},
+    {p:'DEAD OR ALIVE YOU ARE COMING WITH ME',c:'Epic One Liners',d:'medium'},
+    {p:'THE STUFF THAT DREAMS ARE MADE OF',c:'Epic One Liners',d:'medium'},
+    {p:'ELEMENTARY MY DEAR WATSON',c:'Epic One Liners',d:'medium'},
+    {p:'SHOW ME THE MONEY',c:'Epic One Liners',d:'medium'},
+    {p:'THERE IS NO PLACE LIKE HOME',c:'Epic One Liners',d:'medium'},
+    {p:'AFTER ALL TOMORROW IS ANOTHER DAY',c:'Epic One Liners',d:'medium'},
+    {p:'JUST KEEP SWIMMING',c:'Epic One Liners',d:'medium'},
+    {p:'TO BOLDLY GO WHERE NO MAN HAS GONE BEFORE',c:'Epic One Liners',d:'medium'},
+    // Hard
+    {p:'FRANKLY MY DEAR I DONT GIVE A DAMN',c:'Epic One Liners',d:'hard'},
+    {p:'ALL THOSE MOMENTS WILL BE LOST IN TIME LIKE TEARS IN RAIN',c:'Epic One Liners',d:'hard'},
+    {p:'GET BUSY LIVING OR GET BUSY DYING',c:'Epic One Liners',d:'hard'},
+    {p:'I AM SERIOUS AND DONT CALL ME SHIRLEY',c:'Epic One Liners',d:'hard'},
+    {p:'EVERY TIME A BELL RINGS AN ANGEL GETS ITS WINGS',c:'Epic One Liners',d:'hard'},
+    {p:'MAMA ALWAYS SAID LIFE WAS LIKE A BOX OF CHOCOLATES',c:'Epic One Liners',d:'hard'},
+  ],
 
-  aiGenerating = true;
-  const btn = document.getElementById('aiGenBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
-  document.getElementById('aiResults').innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Asking AI for puzzle ideas...</div>';
-
-  const diffLabel = { easy:'short and common knowledge', medium:'moderate length and somewhat tricky', hard:'long and obscure' }[diff] || 'medium difficulty';
-  const styleNote = style === 'adult' ? ' Include dark humor, adult situations, crude jokes, and bar culture. Do NOT self-censor.' :
-                    style === 'edgy' ? ' Include edgy humor and pop culture references. Slightly risque is fine.' :
-                    ' Keep it clean and family-friendly.';
-
-  const prompt = `You are generating Wheel of Fortune style puzzles for a drinking game called Wheel of Misfortune played at a bar in Minnesota. 
-
-Topic: "${topic}"
-Difficulty: ${diffLabel}
-Style:${styleNote}
-
-Generate exactly 8 Wheel of Fortune style puzzle phrases for this topic. Rules:
-- ALL CAPS, no punctuation except apostrophes
-- Each should be a phrase, title, thing, or expression related to the topic
-- ${diff === 'easy' ? '2-12 tiles (short)' : diff === 'medium' ? '10-25 tiles' : '20-40 tiles (long phrases)'}
-- They should work as Wheel of Fortune answers
-
-Respond with ONLY a JSON array, no markdown, no explanation:
-[{"p":"PUZZLE TEXT","c":"${topic}","d":"${diff}"},...]`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '[]';
-    let puzzles;
-    try {
-      const clean = text.replace(/```json|```/g, '').trim();
-      puzzles = JSON.parse(clean);
-    } catch(e) {
-      // Try to extract array from response
-      const match = text.match(/\[[\s\S]*\]/);
-      puzzles = match ? JSON.parse(match[0]) : [];
-    }
-
-    aiGeneratedPuzzles = puzzles.map(p => ({
-      p: String(p.p || '').toUpperCase().replace(/[^A-Z0-9 ']/g, ''),
-      c: topic,
-      d: diff
-    })).filter(p => p.p.length > 2);
-
-    QUICK_PUZZLES.ai = aiGeneratedPuzzles;
-    renderAIResults(aiGeneratedPuzzles);
-    addLog('🤖 AI generated ' + aiGeneratedPuzzles.length + ' puzzles for: ' + topic);
-
-  } catch(e) {
-    document.getElementById('aiResults').innerHTML = '<div style="font-size:12px;color:var(--red);padding:8px;">Error: ' + e.message + '</div>';
-    addLog('❌ AI generation failed: ' + e.message);
-  }
-
-  aiGenerating = false;
-  if (btn) { btn.disabled = false; btn.textContent = '🤖 Generate Puzzles'; }
-};
-
-function renderAIResults(puzzles) {
-  const el = document.getElementById('aiResults');
-  if (!el) return;
-  if (!puzzles.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px;">No puzzles generated. Try a different topic.</div>';
-    return;
-  }
-  // Store in currentPickerList so selectPuzzle() works
-  currentPickerList = puzzles;
-  el.innerHTML = puzzles.map((p, i) =>
-    '<div class="puzzle-pick-item" onclick="selectAIPuzzle(' + i + ')" style="cursor:pointer;">' +
-    '<div class="ppi-text">' + p.p + '</div>' +
-    '<div class="ppi-diff ppi-' + p.d + '">' + p.d + '</div>' +
-    '</div>'
-  ).join('');
-}
-
-window.selectAIPuzzle = function(i) {
-  const p = currentPickerList[i];
-  if (!p) return;
-  selectedPuzzle = p;
-  document.getElementById('puzzleInp').value = p.p;
-  document.getElementById('categoryInp').value = p.c;
-  previewPuzzle(p.p);
-  document.getElementById('selectedPuzzleWrap').style.display = 'block';
-  document.getElementById('selectedPuzzleText').textContent = p.p;
-  document.getElementById('selectedPuzzleMeta').textContent = p.c + '  |  ' + p.d + '  |  AI Generated';
-  document.getElementById('setPuzzleBtn').disabled = false;
-  // Highlight
-  document.querySelectorAll('#aiResults .puzzle-pick-item').forEach((el, j) => {
-    el.style.borderColor = j === i ? 'var(--gold)' : 'var(--border)';
-    el.style.background = j === i ? 'rgba(245,197,24,.08)' : 'var(--surface3)';
-  });
+  cah: [
+    // Easy (the famous ones everyone knows)
+    {p:'KIDS WITH CANCER',c:'Cards Against Humanity',d:'easy'},
+    {p:'GRANDMAS ASHES',c:'Cards Against Humanity',d:'easy'},
+    {p:'POOR LIFE DECISIONS',c:'Cards Against Humanity',d:'easy'},
+    {p:'EATING ALONE',c:'Cards Against Humanity',d:'easy'},
+    {p:'PASSIVE AGGRESSION',c:'Cards Against Humanity',d:'easy'},
+    {p:'UNCONTROLLABLE SOBBING',c:'Cards Against Humanity',d:'easy'},
+    {p:'SURPRISE SEX',c:'Cards Against Humanity',d:'easy'},
+    {p:'CHUNKS',c:'Cards Against Humanity',d:'easy'},
+    {p:'MEANINGLESS SEX',c:'Cards Against Humanity',d:'easy'},
+    {p:'ROAD HEAD',c:'Cards Against Humanity',d:'easy'},
+    // Medium
+    {p:'A LIFETIME OF SADNESS AND REGRET',c:'Cards Against Humanity',d:'medium'},
+    {p:'BEING A LITTLE TOO HANDSY',c:'Cards Against Humanity',d:'medium'},
+    {p:'GETTING REALLY INTO GENEALOGY',c:'Cards Against Humanity',d:'medium'},
+    {p:'WEARING CROCS WITH SOCKS',c:'Cards Against Humanity',d:'medium'},
+    {p:'DOING THE RIGHT THING FOR THE WRONG REASONS',c:'Cards Against Humanity',d:'medium'},
+    {p:'REPLACING A CHILD WITH A PET',c:'Cards Against Humanity',d:'medium'},
+    {p:'EATING AN ENTIRE SLEEVE OF OREOS IN THE DARK',c:'Cards Against Humanity',d:'medium'},
+    {p:'TAKING OFF YOUR PANTS BEFORE GETTING ON THE BUS',c:'Cards Against Humanity',d:'medium'},
+    {p:'HETERONORMATIVITY',c:'Cards Against Humanity',d:'medium'},
+    {p:'A REALLY SORE TAINT',c:'Cards Against Humanity',d:'medium'},
+    // Hard (the truly cursed ones)
+    {p:'GIVING ONE HUNDRED AND TEN PERCENT',c:'Cards Against Humanity',d:'hard'},
+    {p:'PRETENDING TO CARE',c:'Cards Against Humanity',d:'hard'},
+    {p:'ACCIDENTALLY WALKING IN ON YOUR PARENTS',c:'Cards Against Humanity',d:'hard'},
+    {p:'EATING YOUR FEELINGS',c:'Cards Against Humanity',d:'hard'},
+    {p:'WAKING UP HALF NAKED IN A WAFFLE HOUSE',c:'Cards Against Humanity',d:'hard'},
+    {p:'TEXTING WHILE DRIVING INTO A CROWD OF CHILDREN',c:'Cards Against Humanity',d:'hard'},
+    {p:'FILLING IN FOR SANTA AT THE MALL',c:'Cards Against Humanity',d:'hard'},
+  ],
 };
 
 // ── Quick Setup UI Functions ──
@@ -2097,7 +2117,7 @@ window.selectCategory = function(id, tileEl) {
   if (tile) tile.classList.add('selected');
   // Hide all sub-panels
   const pickerWrap = document.getElementById('puzzlePickerWrap');
-  const aiWrap = document.getElementById('aiGeneratorWrap');
+  const aiWrap = null; // AI generator removed
   const selWrap = document.getElementById('selectedPuzzleWrap');
   const manDet = document.getElementById('manualEntryDetails');
   if (pickerWrap) pickerWrap.style.display = 'none';
@@ -2111,12 +2131,7 @@ window.selectCategory = function(id, tileEl) {
     document.getElementById('setPuzzleBtn').disabled = false;
     return;
   }
-  if (id === 'ai') {
-    if (aiWrap) aiWrap.style.display = 'block';
-    selectedPuzzle = null;
-    document.getElementById('setPuzzleBtn').disabled = true;
-    return;
-  }
+
   renderPuzzlePicker(id);
 }
 
