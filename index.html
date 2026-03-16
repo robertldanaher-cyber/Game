@@ -1244,14 +1244,12 @@ function buildShareText() {
 `;
   text += `━━━━━━━━━━━━━━━━━━━━
 `;
-  // Fix: avoid nested template literals (iOS Safari compat)
+  // Build score lines without nested template literals
   const scoreLines = sorted.map(([, p], i) => {
     const rank = ranks[i] || (i+1)+'.';
     return rank + ' ' + (p.avatar || '') + ' ' + p.name + ': ' + p.totalScore + ' pts';
   }).join('\n');
   text += scoreLines + '\n';
-')}
-`;
   text += `━━━━━━━━━━━━━━━━━━━━
 `;
   text += `Jackpot: $${g.jackpot || 0}  |  Rounds: ${g.currentRound || '?'}
