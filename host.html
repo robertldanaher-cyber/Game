@@ -200,7 +200,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 @media(max-width:1100px){.layout{grid-template-columns:280px 1fr}.right{display:none}}
 @media(max-width:720px){.layout{grid-template-columns:1fr}.left{display:none}}
 
-/* ── iPad / tablet optimized host layout ── */
+/* -- iPad / tablet optimized host layout -- */
 @media(max-width:1024px) and (min-width:600px){
   /* iPad mode toggle button */
   .ipad-toggle{display:flex!important;}
@@ -288,7 +288,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   <div class="panel" id="roundCtrlPanel" style="display:none;">
     <div class="ptitle">Round Controls</div>
     <div class="btn-row" style="margin-bottom:8px;">
-      <button class="btn btn-gold btn-sm" onclick="nextTurn()" id="btnNextTurn">Next Turn ▶</button>
+      <button class="btn btn-gold btn-sm" onclick="nextTurn()" id="btnNextTurn">Next Turn ></button>
       <button class="btn btn-ghost btn-sm" onclick="endRound()">End Round</button>
       <button class="btn btn-ghost btn-sm" id="revealAllBtn" onclick="revealAll()" title="Light up the full board" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
     </div>
@@ -302,7 +302,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <input class="inp" id="categoryInp" placeholder="Category (e.g. Phrase)" style="margin-bottom:5px;">
     <select class="sel" id="roundTypeInp" style="width:100%;margin-bottom:7px;">
       <option value="standard">Standard Round</option>
-      <option value="tossup">⚡ Toss-Up</option>
+      <option value="tossup">[!] Toss-Up</option>
       <option value="speedup">🚀 Speed-Up</option>
       <option value="bonus">🌟 Bonus Round</option>
     </select>
@@ -414,10 +414,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
   <!-- Toss-up controls with auto-reveal (#4) -->
   <div class="panel hidden" id="tossupCard" style="margin-bottom:12px;">
-    <div class="ptitle">⚡ Toss-Up Controls</div>
+    <div class="ptitle">[!] Toss-Up Controls</div>
     <div class="btn-row" style="margin-bottom:8px;">
       <button class="btn btn-gold btn-sm" onclick="revealNextLetter()">Reveal Letter 🔡</button>
-      <button class="btn btn-ghost btn-sm" id="autoRevealBtn" onclick="toggleAutoReveal()">▶ Auto-Reveal</button>
+      <button class="btn btn-ghost btn-sm" id="autoRevealBtn" onclick="toggleAutoReveal()">> Auto-Reveal</button>
       <button class="btn btn-ghost btn-sm" id="acceptBuzzBtn" onclick="acceptBuzz()" disabled>Accept Buzz 🔔</button>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -458,8 +458,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px;" id="solvePlayerText"></div>
     <div style="font-size:13px;color:var(--amber);margin-bottom:10px;" id="solveAutoCheck"></div>
     <div class="btn-row">
-      <button class="btn btn-gold" onclick="judgeSolve(true)">✅ CORRECT!</button>
-      <button class="btn btn-red" onclick="judgeSolve(false)">❌ WRONG</button>
+      <button class="btn btn-gold" onclick="judgeSolve(true)">[ok] CORRECT!</button>
+      <button class="btn btn-red" onclick="judgeSolve(false)">[X] WRONG</button>
     </div>
   </div>
 
@@ -558,7 +558,7 @@ const db = getDatabase(app);
 const se=document.getElementById('stars');
 for(let i=0;i<50;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2+.5;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;se.appendChild(s);}
 
-// ─── AUDIO (#5) ───
+// --- AUDIO (#5) ---
 const AudioCtx=window.AudioContext||window.webkitAudioContext;
 let actx=null;
 function ac(){if(!actx){try{actx=new AudioCtx();}catch(e){}}if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}return actx;}
@@ -567,7 +567,7 @@ function playBankrupt(){const a=ac();if(!a)return;try{const o=a.createOscillator
 function playApplause(){const a=ac();if(!a)return;for(let i=0;i<40;i++)setTimeout(()=>{try{const o=a.createOscillator(),g=a.createGain();o.type='square';o.connect(g);g.connect(a.destination);o.frequency.value=200+Math.random()*2000;g.gain.setValueAtTime(Math.random()*.06,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.1);o.start();o.stop(a.currentTime+.1);}catch(e){}},i*50);}
 function playWrong(){const a=ac();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type='square';o.connect(g);g.connect(a.destination);o.frequency.setValueAtTime(220,a.currentTime);o.frequency.setValueAtTime(160,a.currentTime+.18);g.gain.setValueAtTime(.3,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.45);o.start();o.stop(a.currentTime+.45);}catch(e){}}
 
-// ─── WEDGES (#9 Wildcard) ───
+// --- WEDGES (#9 Wildcard) ---
 const WEDGES=[
   {label:'300',val:300,color:'#E24B4A'},{label:'450',val:450,color:'#F5C518'},
   {label:'BANKRUPT',val:'bankrupt',color:'#1a1a2e'},{label:'500',val:500,color:'#27ae60'},
@@ -594,7 +594,7 @@ let bonusExtraLetters=[];
 // Wedge list
 document.getElementById('wedgeList').innerHTML=WEDGES.map(w=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:3px;"><span style="width:9px;height:9px;border-radius:2px;background:${w.color};display:inline-block;"></span>${w.label}</span>`).join('');
 
-// ─── DRAW WHEEL ───
+// --- DRAW WHEEL ---
 function drawWheel(angle=0){
   const cv=document.getElementById('wheelCanvas'),ctx=cv.getContext('2d');
   const cx=260,cy=260,r=252,arc=(2*Math.PI)/WEDGES.length;
@@ -615,7 +615,7 @@ function drawWheel(angle=0){
 }
 drawWheel(0);
 
-// ─── SPIN ───
+// --- SPIN ---
 function triggerSpin(callback){
   if(spinning)return;
   spinning=true;
@@ -646,7 +646,7 @@ function triggerSpin(callback){
 }
 
 
-// ─── FIX 11: CATEGORY VOTE ───
+// --- FIX 11: CATEGORY VOTE ---
 const DEFAULT_CATEGORIES = [
   'Phrase','Thing','Place','Person','Before & After',
   'On The Nose','Food & Drink','Movie & TV','Music',
@@ -657,7 +657,7 @@ const DEFAULT_CATEGORIES = [
 let ALL_CATEGORIES = [...DEFAULT_CATEGORIES];
 let voteCountdownTimer = null;
 
-// ── Category pool manager ──
+// -- Category pool manager --
 function renderCategoryPool() {
   const el = document.getElementById('catPoolList');
   if (!el) return;
@@ -703,7 +703,7 @@ window.startCategoryVote = async function() {
   document.getElementById('categoryVotePanel').classList.remove('hidden');
   const cpEl = document.getElementById('catPoolCount');
   if (cpEl) cpEl.textContent = `${ALL_CATEGORIES.length} categories in pool`;
-  setAnnounce('Category Vote!', 'Players are voting on the next round's category  --  30 seconds!');
+  setAnnounce('Category Vote!', 'Players are voting on the next round category -- 30 seconds!');
   addLog('📊 Category vote started');
   // 30s countdown
   let secs = 30;
@@ -806,9 +806,9 @@ async function handleSpinResult(wedge){
     await update(ref(db,`games/${gameId}`),{[`players/${turnId}/roundScore`]:0,spinRequested:null,dingSignal:{ts:Date.now(),type:'bankrupt',count:1}});
     setTimeout(()=>advanceTurn(),2200);
   } else if(val==='loseaturn'){
-    valEl.textContent='LOSE A TURN ⏭️';valEl.style.color='var(--muted)';subEl.textContent='Turn passes!';
+    valEl.textContent='LOSE A TURN >>|';valEl.style.color='var(--muted)';subEl.textContent='Turn passes!';
     setAnnounce(`${player.name} loses a turn!`,'They keep their round points.');
-    addLog(`⏭️ ${player.name} lost a turn`);
+    addLog(`>>| ${player.name} lost a turn`);
     await sendDrinkInternal('sip',turnId,`Lose a Turn  --  take a sip!`);
     await update(ref(db,`games/${gameId}`),{spinRequested:null,dingSignal:{ts:Date.now(),type:'wrong',count:1}});
     setTimeout(()=>advanceTurn(),2000);
@@ -842,7 +842,7 @@ async function handleSpinResult(wedge){
   }
 }
 
-// ─── CREATE GAME ───
+// --- CREATE GAME ---
 window.createGame=async function(){
   ac(); // unlock audio context
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -884,7 +884,7 @@ function subscribeGame(){
 // Initialize category pool display after DOM ready
 setTimeout(renderCategoryPool, 500);
 
-// ─── RENDER HOST UI ───
+// --- RENDER HOST UI ---
 function renderHostUI(g){
   updateTopbar(g);updatePlayers(g);updateDrinkTargetSel(g);updateWildcardSel(g);
   if(g.status==='lobby'){
@@ -963,7 +963,7 @@ function handleIncomingActions(g){
     document.getElementById('solveAttemptText').textContent=g.solveAttempt;
     const p=g.players?.[g.solveBy];
     document.getElementById('solvePlayerText').textContent=`Attempted by: ${p?.name||'?'}`;
-    document.getElementById('solveAutoCheck').textContent=autoMatch?'✅ Auto-matched  --  looks correct!':'⚠️ Does not exactly match  --  verify manually';
+    document.getElementById('solveAutoCheck').textContent=autoMatch?'[ok] Auto-matched  --  looks correct!':'⚠ Does not exactly match  --  verify manually';
     document.getElementById('solveAutoCheck').style.color=autoMatch?'var(--green)':'var(--amber)';
     // Auto-judge if exact match
     if(autoMatch){setTimeout(()=>judgeSolve(true),800);}
@@ -977,14 +977,14 @@ function handleIncomingActions(g){
   }
 }
 
-// ─── GUESS PROCESSING ───
+// --- GUESS PROCESSING ---
 async function processGuess(letter,playerId,g){
   const puzzle=(g.currentPuzzle||'').toUpperCase();
   const called=g.calledLetters||{};
   const player=g.players?.[playerId];
   if(called[letter]!==undefined){
     setAnnounce(`${letter} already called!`,'Lose a turn  --  sip!');
-    addLog(`⚠️ ${player?.name}: already-used ${letter}`);playWrong();
+    addLog(`⚠ ${player?.name}: already-used ${letter}`);playWrong();
     await sendDrinkInternal('sip',playerId,'Already called! Take a sip  --  turn ends.');
     await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null,dingSignal:{ts:Date.now(),type:'wrong',count:1}});
     advanceTurn();return;
@@ -1015,7 +1015,7 @@ async function processGuess(letter,playerId,g){
     } else {
       setAnnounce(`${letter}! ${count} ${letter}${count>1?'s':''}! +${earned} pts`,`${player?.name} keeps control!`);
     }
-    addLog(`✅ ${player?.name}: ${letter}×${count} +${earned} pts`);playDing(count);
+    addLog(`[ok] ${player?.name}: ${letter}×${count} +${earned} pts`);playDing(count);
     showGR(true,`${letter} × ${count} = +${earned} pts`,isSpeedUp?`${player?.name}  --  now try to solve!`:`${player?.name} keeps control!`);
     await update(ref(db,`games/${gameId}`),upd);
     if(isSpeedUp){
@@ -1032,7 +1032,7 @@ async function processGuess(letter,playerId,g){
     } else {
       setAnnounce(`No ${letter}s!`,`${player?.name}'s turn ends  --  sip!`);
     }
-    addLog(`❌ ${player?.name}: no ${letter}`);playWrong();
+    addLog(`[X] ${player?.name}: no ${letter}`);playWrong();
     await sendDrinkInternal('sip',playerId,`No ${letter}s! Take a sip.`);
     await update(ref(db,`games/${gameId}`),upd);
     showGR(false,`No ${letter}s in the puzzle`,`${player?.name} sips  --  next player!`);
@@ -1088,7 +1088,7 @@ async function processVowel(letter,playerId,g){
   }
 }
 
-// ─── TOSS-UP (#4 auto-reveal) ───
+// --- TOSS-UP (#4 auto-reveal) ---
 let autoRevealing=false;
 window.revealNextLetter=async function(){
   if(!gameData)return;
@@ -1106,7 +1106,7 @@ window.revealNextLetter=async function(){
 
 window.toggleAutoReveal=function(){
   autoRevealing=!autoRevealing;
-  document.getElementById('autoRevealBtn').textContent=autoRevealing?'⏸ Stop Auto':'▶ Auto-Reveal';
+  document.getElementById('autoRevealBtn').textContent=autoRevealing?'⏸ Stop Auto':'> Auto-Reveal';
   document.getElementById('autoRevealBtn').style.borderColor=autoRevealing?'var(--green)':'var(--border)';
   if(autoRevealing){scheduleAutoReveal();}else{clearTimeout(autoRevealTimer);document.getElementById('tossupTimerFill').style.width='100%';}
 };
@@ -1137,9 +1137,9 @@ window.acceptBuzz=async function(){
   pendingBuzzId=null;
 };
 
-function stopAutoReveal(){autoRevealing=false;clearTimeout(autoRevealTimer);document.getElementById('autoRevealBtn').textContent='▶ Auto-Reveal';document.getElementById('tossupTimerFill').style.width='100%';}
+function stopAutoReveal(){autoRevealing=false;clearTimeout(autoRevealTimer);document.getElementById('autoRevealBtn').textContent='> Auto-Reveal';document.getElementById('tossupTimerFill').style.width='100%';}
 
-// ─── SPEED-UP ROUND (#7) ───
+// --- SPEED-UP ROUND (#7) ---
 async function handleSpeedUpSpin(wedge){
   const val=wedge.val;
   const baseVal=typeof val==='number'?val:200;
@@ -1194,7 +1194,7 @@ window.speedUpNextPlayer=async function(){
   startTimerDisplay(Date.now(),td);
 };
 
-// ─── BONUS ROUND (#8) ───
+// --- BONUS ROUND (#8) ---
 function renderBonusBoard(g){
   // Reveal RSTLNE automatically
   const bonusFree=BONUS_FREE;const extra=bonusExtraLetters;
@@ -1268,7 +1268,7 @@ function buildBonusLetterUI(){
   document.getElementById('startBonusTimerBtn').disabled=true;
 }
 
-// ─── SOLVE JUDGEMENT ───
+// --- SOLVE JUDGEMENT ---
 window.judgeSolve=async function(correct){
   if(!gameData)return;
   const solveBy=gameData.solveBy;const player=gameData.players?.[solveBy];
@@ -1289,14 +1289,14 @@ window.judgeSolve=async function(correct){
   } else {
     updates.solveResult={correct:false,name:player?.name||'?',ts:Date.now()};
     setAnnounce(`Wrong! ${player?.name} loses their turn.`,'Take a sip  --  puzzle continues!');
-    addLog(`❌ ${player?.name} wrong solve`);playWrong();
+    addLog(`[X] ${player?.name} wrong solve`);playWrong();
     await sendDrinkInternal('sip',solveBy,'Wrong solve! Take a sip  --  turn ends.');
     await update(ref(db,`games/${gameId}`),updates);
     advanceTurn();
   }
 };
 
-// ─── AUTO-ADVANCE TIMER (#1) ───
+// --- AUTO-ADVANCE TIMER (#1) ---
 async function advanceTurn(){
   if(!gameData)return;
   const order=gameData.turnOrder||[];if(!order.length)return;
@@ -1310,7 +1310,7 @@ async function advanceTurn(){
   });
   const pn=gameData.players?.[nextId]?.name||'?';
   setAnnounce(`${pn}'s turn!`,'Spin the wheel!');
-  addLog(`➡️ ${pn}'s turn`);
+  addLog(`➡ ${pn}'s turn`);
   startTimerDisplay(Date.now(),td);
 }
 
@@ -1343,7 +1343,7 @@ function startTimerDisplay(start,dur){
 
 window.nextTurn=async function(){advanceTurn();};
 
-// ─── FIX 7: LEADERBOARD SPLASH ───
+// --- FIX 7: LEADERBOARD SPLASH ---
 function showLeaderboardSplash(g, roundJustEnded) {
   const players = g.players || {};
   const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
@@ -1399,11 +1399,11 @@ async function startNextRound(){
 }
 
 
-// ─── FIX 9: REVEAL ALL ───
+// --- FIX 9: REVEAL ALL ---
 window.revealAll = async function() {
   if (!gameData) return;
   const puzzle = (gameData.currentPuzzle || '').toUpperCase();
-  if (!puzzle) { addLog('⚠️ No puzzle set  --  nothing to reveal'); return; }
+  if (!puzzle) { addLog('⚠ No puzzle set  --  nothing to reveal'); return; }
   // Build a string of every unique letter in the puzzle
   const allLetters = [...new Set(puzzle.split('').filter(c => c !== ' '))].join('');
   // Mark all letters as called+hit in calledLetters
@@ -1423,7 +1423,7 @@ window.revealAll = async function() {
 window.endRound=async function(){await startNextRound();};
 
 
-// ─── FIX 1: PUZZLE TILE PREVIEW ───
+// --- FIX 1: PUZZLE TILE PREVIEW ---
 window.previewPuzzle = function(raw) {
   const puzzle = raw.toUpperCase().trim();
   const wrap = document.getElementById('puzzlePreview');
@@ -1442,11 +1442,11 @@ window.previewPuzzle = function(raw) {
     }).join('');
     return '<div style="display:flex;justify-content:center;gap:2px;">' + cells + '</div>';
   }).join('');
-  pmeta.textContent = words.length + ' words  -  ' + tiles + ' tiles  -  ' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + (overflow ? ' ⚠️ TOO LONG' : ' (ok)');
+  pmeta.textContent = words.length + ' words  -  ' + tiles + ' tiles  -  ' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + (overflow ? ' ⚠ TOO LONG' : ' (ok)');
   pmeta.style.color = overflow ? 'var(--red)' : 'var(--green)';
 };
 
-// ─── FIX 6: PUZZLE BANK ───
+// --- FIX 6: PUZZLE BANK ---
 const PUZZLE_BANK = [
   {p:'PARTY LIKE THERES NO TOMORROW', c:'Phrase'},
   {p:'LIVING ON THE EDGE', c:'Phrase'},
@@ -1512,7 +1512,7 @@ window.pickBankPuzzle = function(el) {
   if (det) det.open = false;
 };
 
-// ─── FIX 8: HOST RECONNECT ───
+// --- FIX 8: HOST RECONNECT ---
 window.hostReconnect = function() {
   let saved=null;try{saved=sessionStorage.getItem('wom_host_gameId');}catch(e){}
   if (!saved) { alert('No saved game found. Create a new game.'); return; }
@@ -1584,7 +1584,7 @@ window.launchGame=async function(){
 };
 
 
-// ─── #8: GAME HISTORY ───
+// --- #8: GAME HISTORY ---
 const HISTORY_KEY = 'wom_game_history';
 
 function loadHistory() {
@@ -1658,7 +1658,7 @@ window.endGame=async function(){
   addLog('🏁 Game ended!');playApplause();
 };
 
-// ─── RENDER HELPERS ───
+// --- RENDER HELPERS ---
 function renderHostBoard(g){
   const puzzle=(g.currentPuzzle||'').toUpperCase();
   const revealed=new Set((g.revealedLetters||'').toUpperCase().split('').filter(Boolean));
@@ -1757,8 +1757,8 @@ function showGR(hit,main,sub){
   setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-// ─── UTILITIES ───
-window.overrideScore=async function(id,val){const n=parseInt(val);if(isNaN(n))return;await update(ref(db,`games/${gameId}/players/${id}`),{totalScore:n});addLog(`✏️ Score override: ${gameData?.players?.[id]?.name} -> ${n}`);};
+// --- UTILITIES ---
+window.overrideScore=async function(id,val){const n=parseInt(val);if(isNaN(n))return;await update(ref(db,`games/${gameId}/players/${id}`),{totalScore:n});addLog(`✏ Score override: ${gameData?.players?.[id]?.name} -> ${n}`);};
 window.addJP=async function(amt){if(!gameData)return;await update(ref(db,`games/${gameId}`),{jackpot:Math.max(0,(gameData.jackpot||0)+amt)});};
 async function addJPInternal(amt){if(!gameData)return;await update(ref(db,`games/${gameId}`),{jackpot:Math.max(0,(gameData.jackpot||0)+amt)});}
 window.sendDrink=async function(type,target,desc){await sendDrinkInternal(type,target,desc);addLog(`🍹 Drink: ${type} -> ${target==='all'?'everyone':gameData?.players?.[target]?.name}`);};
@@ -1771,7 +1771,7 @@ function addLog(msg){logs.unshift({time:new Date().toLocaleTimeString([],{hour:'
 window.copyLink=function(){navigator.clipboard.writeText(document.getElementById('shareUrl').textContent).then(()=>alert('Link copied!'));};
 
 <!-- iPad mode drawer -->
-<button class="ipad-toggle" id="ipadToggleBtn" onclick="toggleIpadDrawer()">⚙️ CONTROLS</button>
+<button class="ipad-toggle" id="ipadToggleBtn" onclick="toggleIpadDrawer()">⚙ CONTROLS</button>
 <div class="ipad-overlay" id="ipadOverlay" onclick="closeIpadDrawer()"></div>
 <div class="ipad-drawer" id="ipadDrawer">
   <div class="ipad-drawer-handle"></div>
@@ -1781,7 +1781,7 @@ window.copyLink=function(){navigator.clipboard.writeText(document.getElementById
   <div class="ipad-section">
     <div class="ipad-section-label">Turn</div>
     <div class="ipad-btn-grid">
-      <button class="btn btn-gold" onclick="nextTurn();closeIpadDrawer()">Next Turn ▶</button>
+      <button class="btn btn-gold" onclick="nextTurn();closeIpadDrawer()">Next Turn ></button>
       <button class="btn btn-ghost" onclick="endRound();closeIpadDrawer()">End Round</button>
       <button class="btn btn-ghost" onclick="revealAll();closeIpadDrawer()" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
       <button class="btn btn-ghost" onclick="hostSpin();closeIpadDrawer()">🎡 Spin</button>
@@ -1795,7 +1795,7 @@ window.copyLink=function(){navigator.clipboard.writeText(document.getElementById
     <input class="inp" id="ipadCategoryInp" placeholder="Category..." style="margin-bottom:6px;font-size:16px;" oninput="document.getElementById('categoryInp').value=this.value">
     <select class="sel" id="ipadRoundTypeInp" style="width:100%;margin-bottom:8px;" onchange="document.getElementById('roundTypeInp').value=this.value">
       <option value="standard">Standard Round</option>
-      <option value="tossup">⚡ Toss-Up</option>
+      <option value="tossup">[!] Toss-Up</option>
       <option value="speedup">🚀 Speed-Up</option>
       <option value="bonus">🌟 Bonus Round</option>
     </select>
@@ -1832,7 +1832,7 @@ window.copyLink=function(){navigator.clipboard.writeText(document.getElementById
 </div>
 
 
-// ─── iPad HOST VIEW (#9) ───
+// --- iPad HOST VIEW (#9) ---
 window.toggleIpadDrawer = function() {
   const drawer = document.getElementById('ipadDrawer');
   const overlay = document.getElementById('ipadOverlay');
