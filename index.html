@@ -41,6 +41,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .mute-btn:hover{border-color:var(--gold);color:var(--gold);}
 .mute-btn.muted{border-color:var(--red);color:var(--red);}
 
+/* Rejoin picker modal */
+.rejoin-overlay{position:fixed;inset:0;background:rgba(7,7,20,.96);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;}
+.rejoin-overlay.show{display:flex;}
+.rejoin-modal{background:var(--surface);border:2px solid rgba(245,197,24,.4);border-radius:20px;padding:24px;width:100%;max-width:420px;}
+.rejoin-title{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:3px;text-align:center;margin-bottom:6px;}
+.rejoin-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:18px;line-height:1.5;}
+.rejoin-player{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface2);border:2px solid var(--border);border-radius:13px;cursor:pointer;margin-bottom:8px;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.rejoin-player:hover,.rejoin-player:active{border-color:var(--gold);background:rgba(245,197,24,.08);}
+.rejoin-avatar{font-size:28px;}
+.rejoin-name{flex:1;font-size:17px;font-weight:800;}
+.rejoin-score{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);}
+.rejoin-cancel{width:100%;margin-top:6px;padding:10px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:13px;cursor:pointer;}
+
 /* Portrait warning */
 .portrait-warn{display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:30px;}
 @media(orientation:landscape)and(max-height:500px){.portrait-warn{display:flex;}}
@@ -151,20 +164,22 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
 
 /* Fix 11: category vote on player screen */
-.cat-vote-wrap{width:100%;max-width:460px;margin-bottom:10px;display:none;}
-.cat-vote-wrap.show{display:block;}
-.cat-vote-card{background:var(--surface);border:1.5px solid rgba(52,152,219,.35);border-radius:14px;padding:18px;}
-.cat-vote-title{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue);letter-spacing:3px;text-align:center;margin-bottom:4px;}
+.cat-vote-wrap{display:none!important;} /* replaced by modal */
+.cat-vote-overlay{position:fixed;inset:0;background:rgba(7,7,20,.95);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;animation:fadeInPop .3s ease;}
+.cat-vote-overlay.show{display:flex;}
+@keyframes fadeInPop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.cat-vote-modal{background:var(--surface);border:2px solid rgba(52,152,219,.5);border-radius:20px;padding:24px;width:100%;max-width:420px;}
+.cat-vote-title{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--blue);letter-spacing:3px;text-align:center;margin-bottom:4px;}
 .cat-vote-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px;}
 .cat-vote-opts{display:flex;flex-direction:column;gap:8px;}
-.cat-opt{padding:13px 16px;background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;cursor:pointer;font-size:15px;font-weight:700;color:var(--text);text-align:center;transition:all .2s;}
+.cat-opt{padding:16px 18px;background:var(--surface2);border:2px solid var(--border);border-radius:13px;cursor:pointer;font-size:16px;font-weight:800;color:var(--text);text-align:center;transition:all .2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .cat-opt:hover{border-color:var(--blue);background:rgba(41,128,185,.07);}
 .cat-opt.selected{border-color:var(--blue);background:rgba(41,128,185,.12);color:var(--blue);}
-.cat-opt.selected::after{content:' (ok)';}
+.cat-opt.selected::after{content:' -- voted!';font-weight:400;font-size:13px;}
 .cat-vote-done{text-align:center;padding:16px 0;}
 .cat-vote-done .big{font-size:44px;}
 .cat-vote-done p{font-size:13px;color:var(--muted);margin-top:6px;}
-.cat-vote-timer{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:2px;}
+.cat-vote-timer-bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:16px;}.cat-vote-timer-fill{height:100%;background:var(--blue);border-radius:3px;transition:width 1s linear;}.cat-vote-secs{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;}
 
 /* Fix 12: free play indicator on round banner */
 .fp-badge{font-size:11px;color:#9b59b6;font-weight:700;background:rgba(142,68,173,.12);border:1px solid rgba(142,68,173,.25);border-radius:8px;padding:2px 7px;margin-left:4px;}
@@ -269,6 +284,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 </style>
 </head>
 <body>
+<!-- Rejoin picker modal -->
+<div class="rejoin-overlay" id="rejoinOverlay">
+  <div class="rejoin-modal">
+    <div class="rejoin-title">👋 Welcome Back!</div>
+    <div class="rejoin-sub" id="rejoinSub">The game is full. Are you one of these players?</div>
+    <div id="rejoinPlayerList"></div>
+    <button class="rejoin-cancel" onclick="closeRejoinPicker()">Not me — cancel</button>
+  </div>
+</div>
+
 <!-- Portrait warning -->
 <div class="portrait-warn">
   <div class="big">📱</div>
@@ -331,13 +356,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     </div>
 
     <!-- Fix 11: category vote -->
-    <div class="cat-vote-wrap" id="catVoteWrap">
-      <div class="cat-vote-card">
+    <!-- category vote is now a full-screen modal (see catVoteOverlay) -->
+    <div style="display:none" id="catVoteWrap">
+      <div>
         <div class="cat-vote-title">VOTE!</div>
         <div class="cat-vote-sub">Pick a category for the next round</div>
         <div class="cat-vote-opts" id="catVoteOpts"></div>
         <div class="cat-vote-done hidden" id="catVoteDone">
-          <div class="big">✅</div>
+          <div class="big">[ok]</div>
           <p>Vote submitted! Waiting for others...</p>
         </div>
         <div class="cat-vote-timer" id="catVoteTimer"></div>
@@ -388,7 +414,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       <div class="action-row" id="mainBtns">
         <button class="btn btn-gold" id="btnSpin" onclick="requestSpin()">🎡 SPIN</button>
         <button class="btn btn-outline" id="btnVowel" onclick="startBuyVowel()">💰 VOWEL<br><small style="font-weight:400;font-size:10px">-50 pts</small></button>
-        <button class="btn btn-outline" id="btnSolve" onclick="startSolve()">✅ SOLVE</button>
+        <button class="btn btn-outline" id="btnSolve" onclick="startSolve()">[ok] SOLVE</button>
         <button class="btn btn-outline hidden" id="btnWildcard" onclick="useWildcard()" style="border-color:rgba(142,68,173,.4);color:#9b59b6;">🃏 WILD</button>
       </div>
       <div class="kb-wrap hidden" id="kbConsonant">
@@ -415,7 +441,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
         <div class="drink-log-pills" id="drinkLogPills">
           <span style="font-size:12px;color:var(--muted);">No drinks yet 🍵</span>
         </div>
-        <span class="drink-log-toggle" id="drinkLogToggle">▼ History</span>
+        <span class="drink-log-toggle" id="drinkLogToggle">v History</span>
       </div>
       <div class="drink-log-body" id="drinkLogBody">
         <div class="drink-log-list" id="drinkLogList"></div>
@@ -456,6 +482,21 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   </div>
 </div>
 
+<!-- Category vote modal popup -->
+<div class="cat-vote-overlay" id="catVoteOverlay">
+  <div class="cat-vote-modal">
+    <div class="cat-vote-title">🗳️ VOTE!</div>
+    <div class="cat-vote-sub" id="cvSub">Pick a category for the next round</div>
+    <div class="cat-vote-opts" id="catVoteOpts"></div>
+    <div class="cat-vote-done hidden" id="catVoteDone">
+      <div class="big">✅</div>
+      <p id="cvDoneMsg">Vote submitted! Waiting for others...</p>
+    </div>
+    <div class="cat-vote-timer-bar"><div class="cat-vote-timer-fill" id="cvTimerFill" style="width:100%"></div></div>
+    <div class="cat-vote-secs" id="cvSecs"></div>
+  </div>
+</div>
+
 <!-- Drink overlay -->
 <div class="drink-overlay" id="drinkOverlay">
   <div class="drink-modal" id="drinkModal">
@@ -468,7 +509,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
 <!-- Solve flash -->
 <div class="solve-flash" id="solveFlash">
-  <div class="sf-emoji" id="sfEmoji">✅</div>
+  <div class="sf-emoji" id="sfEmoji">[ok]</div>
   <div class="sf-title" id="sfTitle">CORRECT!</div>
   <div class="sf-sub" id="sfSub"></div>
 </div>
@@ -488,7 +529,7 @@ const se=document.getElementById('stars');
 for(let i=0;i<65;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.5+.5;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;se.appendChild(s);}
 
 // Avatar / color pickers
-const AVATARS=['🎉','🍺','🎲','🔥','⭐','🎸','🦊','🐯','🍕','🎯','👑','🤠'];
+const AVATARS=['🎉','🍺','🎲','🔥','*','🎸','🦊','🐯','🍕','🎯','👑','🤠'];
 const COLORS=['#E24B4A','#F5C518','#2ecc71','#3498db','#9b59b6','#e67e22','#1abc9c','#e91e63','#00bcd4','#ff9800','#8bc34a','#ff5722'];
 let selectedAvatar=AVATARS[0], selectedColor=COLORS[0];
 
@@ -513,7 +554,7 @@ let gameData=null,timerInterval=null,lastDrinkTs=0,lastSolveResultTs=0,lastDingT
 function show(id){['sJoin','sLobby','sGame','sWinner'].forEach(s=>{const el=document.getElementById(s);const t=s===id;el.classList.toggle('hidden',!t);if(t)el.style.display='flex';else el.style.display='none';});}
 function toast(msg,dur=2400){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
 
-// ─── WEB AUDIO SOUNDS (#5) ───
+// --- WEB AUDIO SOUNDS (#5) ---
 const AudioCtx=window.AudioContext||window.webkitAudioContext;
 let actx=null;
 function getACtx(){if(!actx){try{actx=new AudioCtx();}catch(e){}}if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}return actx;}
@@ -585,7 +626,7 @@ function playWrong(){if(soundMuted)return;
 }
 
 
-// ─── FIX 13: SOUND TOGGLE ───
+// --- FIX 13: SOUND TOGGLE ---
 let soundMuted = false;
 window.toggleMute = function() {
   soundMuted = !soundMuted;
@@ -606,7 +647,7 @@ try {
   }
 } catch(e) {}
 
-// ─── CONFETTI (#13b) ───
+// --- CONFETTI (#13b) ---
 function launchConfetti(){
   const canvas=document.getElementById('confettiCanvas');
   canvas.width=window.innerWidth;canvas.height=window.innerHeight;
@@ -653,7 +694,7 @@ setTimeout(()=>{document.getElementById('connOverlay').style.display='none';docu
 
 document.getElementById('codeInp').addEventListener('input',function(){this.value=this.value.toUpperCase();});
 
-// ─── JOIN ───
+// --- JOIN ---
 window.joinGame=async function(){
   const name=document.getElementById('nameInp').value.trim();
   const code=document.getElementById('codeInp').value.trim().toUpperCase();
@@ -661,30 +702,131 @@ window.joinGame=async function(){
   if(code.length!==4){toast('Enter the 4-letter code!');return;}
   document.getElementById('joinBtn').disabled=true;
   gameId=code;myName=name;
-  const snap=await get(ref(db,`games/${gameId}`));
-  if(!snap.exists()){toast('Game not found!');document.getElementById('joinBtn').disabled=false;return;}
+  const snap=await get(ref(db,'games/'+gameId));
+  if(!snap.exists()){toast('Game not found!');document.getElementById('joinBtn').disabled=false;gameId=null;return;}
   const g=snap.val();
-  if(g.status!=='lobby'){toast('Game already started!');document.getElementById('joinBtn').disabled=false;return;}
   const players=g.players||{};
-  if(Object.keys(players).length>=(g.maxPlayers||4)){toast('Game is full!');document.getElementById('joinBtn').disabled=false;return;}
-  myPlayerId=push(ref(db,`games/${gameId}/players`)).key;
+  const playerCount=Object.keys(players).length;
+  const isFull=playerCount>=(g.maxPlayers||4);
+  const isStarted=g.status!=='lobby';
+
+  // If full or already started -- show rejoin picker instead of hard reject
+  if(isFull||isStarted){
+    showRejoinPicker(players,g,name);
+    document.getElementById('joinBtn').disabled=false;
+    return;
+  }
+
+  // Normal fresh join
+  await doFreshJoin(g,players,name);
+};
+
+async function doFreshJoin(g,players,name){
+  myPlayerId=push(ref(db,'games/'+gameId+'/players')).key;
   mySlot=Object.keys(players).length+1;
-  await set(ref(db,`games/${gameId}/players/${myPlayerId}`),{
-    name,slot:mySlot,totalScore:0,roundScore:0,avatar:selectedAvatar,color:selectedColor,wildcard:false,joinedAt:serverTimestamp()
+  await set(ref(db,'games/'+gameId+'/players/'+myPlayerId),{
+    name,slot:mySlot,totalScore:0,roundScore:0,
+    avatar:selectedAvatar,color:selectedColor,
+    wildcard:false,joinedAt:serverTimestamp()
   });
-  // Save session (#15)
+  saveSession();
+  enterLobby(name);
+}
+
+function saveSession(){
   try{
     sessionStorage.setItem('wom_gameId',gameId);
     sessionStorage.setItem('wom_playerId',myPlayerId);
     sessionStorage.setItem('wom_name',myName);
-  }catch(e){} // iOS private browsing
+  }catch(e){}
+}
+
+function enterLobby(name){
   document.getElementById('lobbyCode').textContent=gameId;
   document.getElementById('yourNameDisp').textContent=name;
   show('sLobby');
-  onValue(ref(db,`games/${gameId}`),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
+  onValue(ref(db,'games/'+gameId),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
+}
+
+// ── Rejoin picker ──
+let rejoinGameData=null;
+
+function showRejoinPicker(players,g,typedName){
+  rejoinGameData=g;
+  const list=document.getElementById('rejoinPlayerList');
+  const sub=document.getElementById('rejoinSub');
+  const isStarted=g.status!=='lobby';
+  sub.textContent = isStarted
+    ? 'The game is in progress. Tap your name to rejoin!'
+    : 'The game is full. Tap your name to take your spot!';
+
+  // Sort by slot
+  const sorted=Object.entries(players).sort((a,b)=>(a[1].slot||0)-(b[1].slot||0));
+  list.innerHTML=sorted.map(([id,p])=>`
+    <div class="rejoin-player" onclick="rejoinAsPlayer('${id}')">
+      <div class="rejoin-avatar">${p.avatar||'🎲'}</div>
+      <div class="rejoin-name" style="color:${p.color||'var(--text)'}">${p.name}</div>
+      <div class="rejoin-score">${(p.totalScore||0)+(p.roundScore||0)} pts</div>
+    </div>`).join('');
+
+  // If typed name matches an existing player, highlight it
+  const match=sorted.find(([,p])=>p.name.toLowerCase()===typedName.toLowerCase());
+  if(match){
+    sub.textContent='Welcome back, '+match[1].name+'! Tap your name to rejoin.';
+  }
+
+  document.getElementById('rejoinOverlay').classList.add('show');
+}
+
+window.rejoinAsPlayer=async function(playerId){
+  if(!rejoinGameData||!gameId)return;
+  const players=rejoinGameData.players||{};
+  const player=players[playerId];
+  if(!player){toast('Player not found!');return;}
+
+  // Take over this player slot
+  myPlayerId=playerId;
+  myName=player.name;
+  selectedAvatar=player.avatar||'🎲';
+  selectedColor=player.color||'var(--text)';
+
+  // Update avatar/color display on join screen to match
+  document.getElementById('rejoinOverlay').classList.remove('show');
+
+  saveSession();
+
+  // If game is in lobby, go to lobby. If playing/ended, go straight to game.
+  if(rejoinGameData.status==='lobby'){
+    enterLobby(myName);
+  } else {
+    // Subscribe and jump straight into the game
+    document.getElementById('lobbyCode').textContent=gameId;
+    document.getElementById('yourNameDisp').textContent=myName;
+    show('sLobby');
+    onValue(ref(db,'games/'+gameId),snap=>{
+      if(!snap.exists())return;
+      gameData=snap.val();
+      handleState(gameData);
+    });
+  }
+
+  addToast('Rejoined as '+myName+'!');
 };
 
-// ─── STATE HANDLER ───
+window.closeRejoinPicker=function(){
+  document.getElementById('rejoinOverlay').classList.remove('show');
+  gameId=null;
+};
+
+function addToast(msg){
+  // Quick non-blocking status message
+  let t=document.getElementById('reJoinToast');
+  if(!t){t=document.createElement('div');t.id='reJoinToast';t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid rgba(245,197,24,.3);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;color:var(--gold);z-index:700;';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  setTimeout(()=>{t.style.opacity='0';},2500);
+}
+
+// --- STATE HANDLER ---
 function handleState(g){
   updateLobby(g);
   checkDrinkSignal(g);
@@ -712,7 +854,7 @@ function updateLobby(g){
 }
 
 
-// ─── FIX 10: PLAYER WHEEL ANIMATION ───
+// --- FIX 10: PLAYER WHEEL ANIMATION ---
 const P_WEDGES = [
   {l:'300',c:'#E24B4A'},{l:'450',c:'#F5C518'},{l:'BANKRUPT',c:'#1a1a2e'},
   {l:'500',c:'#27ae60'},{l:'SIP',c:'#e67e22'},{l:'350',c:'#2980b9'},
@@ -791,58 +933,80 @@ function checkSpinSignal(g) {
 }
 
 
-// ─── FIX 11: CATEGORY VOTE (player side) ───
+// --- FIX 11: CATEGORY VOTE (player side) ---
 let myVoteIdx = null;
 let catVoteActive = false;
 let catVoteTs = 0;
 
 function checkCategoryVote(g) {
   const cv = g.categoryVote;
-  const wrap = document.getElementById('catVoteWrap');
-  if (!wrap) return;
+  const overlay = document.getElementById('catVoteOverlay');
+  if (!overlay) return;
+
   if (!cv || !cv.active) {
-    wrap.classList.remove('show');
+    // Vote ended -- close modal
+    overlay.classList.remove('show');
     myVoteIdx = null;
     catVoteActive = false;
     return;
   }
-  // New vote session
+
+  // New vote session -- open modal and reset
   if (cv.ts !== catVoteTs) {
     catVoteTs = cv.ts;
     myVoteIdx = null;
     catVoteActive = true;
-    document.getElementById('catVoteOpts').innerHTML = '';
-    document.getElementById('catVoteDone').classList.add('hidden');
-    document.getElementById('catVoteOpts').style.display = 'flex';
+    const doneEl = document.getElementById('catVoteDone');
+    const optsEl = document.getElementById('catVoteOpts');
+    if (doneEl) doneEl.classList.add('hidden');
+    if (optsEl) { optsEl.style.display = 'flex'; optsEl.innerHTML = ''; }
     renderVoteOptions(cv.options);
+    // Reset timer bar
+    const fill = document.getElementById('cvTimerFill');
+    if (fill) { fill.style.transition = 'none'; fill.style.width = '100%'; }
+    setTimeout(() => {
+      if (fill) { fill.style.transition = 'width 30s linear'; fill.style.width = '0%'; }
+    }, 50);
+    overlay.classList.add('show');
+    // Buzz sound to alert player
+    try { playBuzz(); } catch(e) {}
   }
-  wrap.classList.add('show');
-  // Update timer display from countdown stored as ts
+
+  // Update countdown
   const elapsed = Math.floor((Date.now() - cv.ts) / 1000);
   const remaining = Math.max(0, 30 - elapsed);
-  const timerEl = document.getElementById('catVoteTimer');
-  if (timerEl) timerEl.textContent = remaining > 0 ? `${remaining}s remaining` : 'Voting closed';
+  const secsEl = document.getElementById('cvSecs');
+  if (secsEl) secsEl.textContent = remaining > 0 ? remaining + 's remaining' : 'Voting closed';
 }
 
 function renderVoteOptions(options) {
   const optsEl = document.getElementById('catVoteOpts');
+  if (!optsEl) return;
   optsEl.innerHTML = (options || []).map((opt, i) =>
     `<div class="cat-opt" id="catOpt_${i}" onclick="submitCatVote(${i})">${opt}</div>`
   ).join('');
 }
 
-window.submitCatVote = async function(idx) {
+window.submitCatVote = async function(voteIdx) {
   if (myVoteIdx !== null) return; // already voted
-  myVoteIdx = idx;
-  // Highlight selection
+  myVoteIdx = voteIdx;
+  // Highlight
   document.querySelectorAll('.cat-opt').forEach((el, i) => {
-    el.classList.toggle('selected', i === idx);
+    el.classList.toggle('selected', i === voteIdx);
     el.style.pointerEvents = 'none';
   });
-  document.getElementById('catVoteOpts').style.display = 'none';
-  document.getElementById('catVoteDone').classList.remove('hidden');
+  // Show confirmation
+  const optsEl = document.getElementById('catVoteOpts');
+  const doneEl = document.getElementById('catVoteDone');
+  const chosen = document.getElementById('catOpt_' + voteIdx);
+  if (optsEl) optsEl.style.display = 'none';
+  if (doneEl) {
+    doneEl.classList.remove('hidden');
+    const msg = document.getElementById('cvDoneMsg');
+    if (msg && chosen) msg.textContent = 'You voted: ' + chosen.textContent + ' -- waiting for others!';
+  }
   await update(ref(db, `games/${gameId}`), {
-    [`categoryVote/votes/${myPlayerId}`]: idx
+    [`categoryVote/votes/${myPlayerId}`]: voteIdx
   });
 };
 
@@ -857,7 +1021,7 @@ function updateFreePlayBadge(g) {
   }
 }
 
-// ─── RENDER GAME ───
+// --- RENDER GAME ---
 function renderGame(g){
   updateFreePlayBadge(g); // Fix 12
   document.getElementById('rndType').textContent=rtLabel(g.roundType);
@@ -878,9 +1042,9 @@ function renderGame(g){
   document.getElementById('buzzBtn').style.display=isTossup&&!isMyTurn?'block':'none';
 }
 
-function rtLabel(t){return{standard:'Standard Round',tossup:'⚡ Toss-Up Round',speedup:'🚀 Speed-Up Round',bonus:'🌟 Bonus Round'}[t]||'Standard Round';}
+function rtLabel(t){return{standard:'Standard Round',tossup:'[!] Toss-Up Round',speedup:'🚀 Speed-Up Round',bonus:'🌟 Bonus Round'}[t]||'Standard Round';}
 
-// ─── BOARD ───
+// --- BOARD ---
 function renderBoard(g){
   const puzzle=(g.currentPuzzle||'').toUpperCase();
   const revealed=new Set((g.revealedLetters||'').toUpperCase().split('').filter(Boolean));
@@ -906,7 +1070,7 @@ function buildRows(words,cols){
   });
 }
 
-// ─── USED LETTERS A-Z (#12) ───
+// --- USED LETTERS A-Z (#12) ---
 function renderUsedLetters(g){
   const called=g.calledLetters||{};
   const el=document.getElementById('usedLettersGrid');
@@ -916,7 +1080,7 @@ function renderUsedLetters(g){
   }).join('');
 }
 
-// ─── SCOREBOARD ───
+// --- SCOREBOARD ---
 function renderScoreboard(g){
   const players=g.players||{};const turnId=g.currentTurnPlayerId;
   const sorted=Object.entries(players).sort((a,b)=>b[1].totalScore-a[1].totalScore);
@@ -932,7 +1096,7 @@ function renderScoreboard(g){
     </div>`).join('');
 }
 
-// ─── TURN UI ───
+// --- TURN UI ---
 function renderTurnUI(g){
   const isMyTurn=g.currentTurnPlayerId===myPlayerId;
   const phase=g.turnPhase||'spin';
@@ -958,7 +1122,7 @@ function renderTurnUI(g){
       document.getElementById('spinSub').textContent='Now pick a consonant!';
     } else {
       const sv={bankrupt:{v:'BANKRUPT 💀',c:'var(--red)',s:'You lost your round points!'},
-        loseaturn:{v:'LOSE A TURN ⏭️',c:'var(--muted)',s:'Turn passes to next player.'},
+        loseaturn:{v:'LOSE A TURN >>|',c:'var(--muted)',s:'Turn passes to next player.'},
         sip:{v:'SIP 🍺',c:'var(--amber)',s:'Take a sip  --  then pick a consonant.'},
         chug:{v:'CHUG 🍻',c:'var(--red)',s:'Chug your drink!'},
         shot:{v:'TAKE A SHOT 🥃',c:'var(--blue)',s:'Pour and take a shot!'}};
@@ -1028,7 +1192,7 @@ function renderTimer(g){
   },500);
 }
 
-// ─── PLAYER ACTIONS ───
+// --- PLAYER ACTIONS ---
 window.requestSpin=async function(){getACtx();await update(ref(db,`games/${gameId}`),{spinRequested:serverTimestamp(),spinRequestBy:myPlayerId});};
 window.startBuyVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'buy_vowel'});};
 window.cancelVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null});};
@@ -1056,7 +1220,7 @@ window.useWildcard=async function(){
 };
 
 
-// ─── FIX 14: DRINK HISTORY LOG ───
+// --- FIX 14: DRINK HISTORY LOG ---
 let myDrinkLog = []; // {type, desc, time}
 let mySips = 0, myChugs = 0, myShots = 0;
 
@@ -1066,7 +1230,7 @@ window.toggleDrinkLog = function() {
   const toggle = document.getElementById('drinkLogToggle');
   const open = body.classList.toggle('open');
   summary.classList.toggle('open', open);
-  toggle.textContent = open ? '▲ History' : '▼ History';
+  toggle.textContent = open ? '^ History' : 'v History';
 };
 
 function recordDrink(type, desc) {
@@ -1100,7 +1264,7 @@ function updateDrinkLogUI() {
   ).join('') || '<div style="font-size:12px;color:var(--muted);padding:4px 0;">No drinks recorded yet.</div>';
 }
 
-// ─── DRINK SIGNAL ───
+// --- DRINK SIGNAL ---
 function checkDrinkSignal(g){
   const sig=g.drinkSignal;
   if(!sig||sig.ts===lastDrinkTs)return;
@@ -1120,7 +1284,7 @@ function showDrink(type,desc){
 }
 window.closeDrink=function(){document.getElementById('drinkOverlay').classList.remove('show');};
 
-// ─── DING SIGNAL (#5) ───
+// --- DING SIGNAL (#5) ---
 function checkDingSignal(g){
   const sig=g.dingSignal;
   if(!sig||sig.ts===lastDingTs)return;
@@ -1130,13 +1294,13 @@ function checkDingSignal(g){
   else playDing(sig.count||1);
 }
 
-// ─── SOLVE RESULT FLASH (#2 feedback + confetti) ───
+// --- SOLVE RESULT FLASH (#2 feedback + confetti) ---
 function checkSolveResult(g){
   const r=g.solveResult;
   if(!r||r.ts===lastSolveResultTs)return;
   lastSolveResultTs=r.ts;
   const flash=document.getElementById('solveFlash');
-  document.getElementById('sfEmoji').textContent=r.correct?'🎉':'❌';
+  document.getElementById('sfEmoji').textContent=r.correct?'🎉':'[X]';
   document.getElementById('sfTitle').textContent=r.correct?'CORRECT!':'WRONG!';
   document.getElementById('sfSub').textContent=r.correct?`${r.name} solves it! Everyone else sips!`:`${r.name}  --  wrong! Take a sip, turn ends.`;
   flash.className='solve-flash show '+(r.correct?'correct-flash':'wrong-flash');
@@ -1145,7 +1309,7 @@ function checkSolveResult(g){
 }
 
 
-// ─── FIX 7: LEADERBOARD SPLASH (player side) ───
+// --- FIX 7: LEADERBOARD SPLASH (player side) ---
 let lastSplashTs = 0;
 function checkLeaderboardSplash(g) {
   const sig = g.leaderboardSplash;
@@ -1173,7 +1337,7 @@ function checkLeaderboardSplash(g) {
 }
 
 
-// ─── FIX 15: GAME RECAP ───
+// --- FIX 15: GAME RECAP ---
 function buildRecapCard(g) {
   const card = document.getElementById('recapCard');
   const statsEl = document.getElementById('recapStats');
@@ -1242,7 +1406,7 @@ function buildShareText() {
   const ranks = ['🥇', '🥈', '🥉'];
   let text = `🎡 WHEEL OF MISFORTUNE RECAP
 `;
-  text += `━━━━━━━━━━━━━━━━━━━━
+  text += `====================
 `;
   // Build score lines without nested template literals
   const scoreLines = sorted.map(([, p], i) => {
@@ -1250,7 +1414,7 @@ function buildShareText() {
     return rank + ' ' + (p.avatar || '') + ' ' + p.name + ': ' + p.totalScore + ' pts';
   }).join('\n');
   text += scoreLines + '\n';
-  text += `━━━━━━━━━━━━━━━━━━━━
+  text += `====================
 `;
   text += `Jackpot: $${g.jackpot || 0}  |  Rounds: ${g.currentRound || '?'}
 `;
@@ -1260,7 +1424,7 @@ function buildShareText() {
   return text;
 }
 
-// ─── WINNER ───
+// --- WINNER ---
 function renderWinner(g){
   const players=g.players||{};
   const sorted=Object.entries(players).sort((a,b)=>b[1].totalScore-a[1].totalScore);
