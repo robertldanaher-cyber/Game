@@ -480,7 +480,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-const app = initializeApp(FIREBASE_CONFIG);
+const app = initializeApp(window.FIREBASE_CONFIG);
 const db = getDatabase(app);
 
 // Stars
