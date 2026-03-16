@@ -1770,68 +1770,6 @@ function setPhase(cur){['lobby','play','end'].forEach((p,i,arr)=>{const el=docum
 function addLog(msg){logs.unshift({time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),msg});const el=document.getElementById('gameLog');el.innerHTML=logs.slice(0,50).map(e=>`<div class="log-entry"><span class="log-time">${e.time}</span><span class="log-msg">${e.msg}</span></div>`).join('');}
 window.copyLink=function(){navigator.clipboard.writeText(document.getElementById('shareUrl').textContent).then(()=>alert('Link copied!'));};
 
-<!-- iPad mode drawer -->
-<button class="ipad-toggle" id="ipadToggleBtn" onclick="toggleIpadDrawer()">⚙ CONTROLS</button>
-<div class="ipad-overlay" id="ipadOverlay" onclick="closeIpadDrawer()"></div>
-<div class="ipad-drawer" id="ipadDrawer">
-  <div class="ipad-drawer-handle"></div>
-  <div class="ipad-drawer-title">Host Controls</div>
-
-  <!-- Turn controls -->
-  <div class="ipad-section">
-    <div class="ipad-section-label">Turn</div>
-    <div class="ipad-btn-grid">
-      <button class="btn btn-gold" onclick="nextTurn();closeIpadDrawer()">Next Turn ></button>
-      <button class="btn btn-ghost" onclick="endRound();closeIpadDrawer()">End Round</button>
-      <button class="btn btn-ghost" onclick="revealAll();closeIpadDrawer()" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
-      <button class="btn btn-ghost" onclick="hostSpin();closeIpadDrawer()">🎡 Spin</button>
-    </div>
-  </div>
-
-  <!-- Puzzle entry -->
-  <div class="ipad-section">
-    <div class="ipad-section-label">Set Puzzle</div>
-    <input class="inp" id="ipadPuzzleInp" placeholder="PUZZLE TEXT..." style="margin-bottom:6px;text-transform:uppercase;font-size:16px;" oninput="syncPuzzleInput(this.value)">
-    <input class="inp" id="ipadCategoryInp" placeholder="Category..." style="margin-bottom:6px;font-size:16px;" oninput="document.getElementById('categoryInp').value=this.value">
-    <select class="sel" id="ipadRoundTypeInp" style="width:100%;margin-bottom:8px;" onchange="document.getElementById('roundTypeInp').value=this.value">
-      <option value="standard">Standard Round</option>
-      <option value="tossup">[!] Toss-Up</option>
-      <option value="speedup">🚀 Speed-Up</option>
-      <option value="bonus">🌟 Bonus Round</option>
-    </select>
-    <button class="btn btn-gold" style="width:100%;" onclick="setPuzzle();closeIpadDrawer()">Set Puzzle & Start Round</button>
-  </div>
-
-  <!-- Scoreboard -->
-  <div class="ipad-section">
-    <div class="ipad-section-label">Scores</div>
-    <div id="ipadScoreRows"></div>
-  </div>
-
-  <!-- Drink controls -->
-  <div class="ipad-section">
-    <div class="ipad-section-label">Drinks</div>
-    <div class="ipad-btn-grid">
-      <button class="btn btn-ghost" onclick="sendDrink('sip','all','Everyone sips!')" style="border-color:rgba(243,156,18,.35);color:var(--amber);">🍺 All Sip</button>
-      <button class="btn btn-ghost" onclick="sendDrink('chug','all','Everyone chug!')" style="border-color:rgba(226,75,74,.35);color:var(--red);">🍻 All Chug</button>
-      <button class="btn btn-ghost" onclick="sendDrink('shot','all','Shots!')" style="border-color:rgba(41,128,185,.35);color:var(--blue);">🥃 All Shot</button>
-      <button class="btn btn-ghost" onclick="addJP(1)" style="border-color:rgba(245,197,24,.35);color:var(--gold);">+$1 Jackpot</button>
-    </div>
-  </div>
-
-  <!-- Category vote -->
-  <div class="ipad-section">
-    <div class="ipad-section-label">Category Vote</div>
-    <button class="btn btn-ghost btn-full" style="border-color:rgba(52,152,219,.35);color:var(--blue);" onclick="startCategoryVote();closeIpadDrawer()">📊 Start Category Vote</button>
-  </div>
-
-  <!-- End game -->
-  <div class="ipad-section">
-    <button class="btn btn-red btn-full" onclick="endGame()">🏁 END GAME</button>
-  </div>
-</div>
-
-
 // --- iPad HOST VIEW (#9) ---
 window.toggleIpadDrawer = function() {
   const drawer = document.getElementById('ipadDrawer');
@@ -1892,6 +1830,260 @@ function updateIpadScores() {
   }, { passive: true });
 })();
 
+
+
+
+
+window.toggleIpadDrawer = function() {
+  const drawer = document.getElementById('ipadDrawer');
+  const overlay = document.getElementById('ipadOverlay');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('show');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('show');
+    updateIpadScores();
+    // Sync input values from main fields
+    const mp = document.getElementById('puzzleInp');
+    const mc = document.getElementById('categoryInp');
+    const mr = document.getElementById('roundTypeInp');
+    if (mp) document.getElementById('ipadPuzzleInp').value = mp.value;
+    if (mc) document.getElementById('ipadCategoryInp').value = mc.value;
+    if (mr) document.getElementById('ipadRoundTypeInp').value = mr.value;
+  }
+};
+
+window.closeIpadDrawer = function() {
+  document.getElementById('ipadDrawer').classList.remove('open');
+  document.getElementById('ipadOverlay').classList.remove('show');
+};
+
+window.syncPuzzleInput = function(val) {
+  const mainInp = document.getElementById('puzzleInp');
+  if (mainInp) { mainInp.value = val; previewPuzzle(val); }
+};
+
+function updateIpadScores() {
+  if (!gameData) return;
+  const players = gameData.players || {};
+  const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
+  const ranks = ['🥇','🥈','🥉'];
+  const el = document.getElementById('ipadScoreRows');
+  if (!el) return;
+  el.innerHTML = sorted.map(([id, p], i) => `
+    <div class="ipad-score-row">
+      <div style="font-size:18px;min-width:26px;">${ranks[i] || i+1}</div>
+      <div style="font-size:20px;">${p.avatar || '🎲'}</div>
+      <div style="flex:1;font-size:14px;font-weight:700;color:${p.color || 'var(--text)'};">${p.name}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);">${p.totalScore || 0}</div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--muted);">No players yet</div>';
+}
+
+// Close drawer on swipe down
+(function() {
+  let startY = 0;
+  const drawer = document.getElementById('ipadDrawer');
+  if (!drawer) return;
+  drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  drawer.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 60) closeIpadDrawer();
+  }, { passive: true });
+})();
+
+
+
+
+window.toggleIpadDrawer = function() {
+  const drawer = document.getElementById('ipadDrawer');
+  const overlay = document.getElementById('ipadOverlay');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('show');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('show');
+    updateIpadScores();
+    // Sync input values from main fields
+    const mp = document.getElementById('puzzleInp');
+    const mc = document.getElementById('categoryInp');
+    const mr = document.getElementById('roundTypeInp');
+    if (mp) document.getElementById('ipadPuzzleInp').value = mp.value;
+    if (mc) document.getElementById('ipadCategoryInp').value = mc.value;
+    if (mr) document.getElementById('ipadRoundTypeInp').value = mr.value;
+  }
+};
+
+window.closeIpadDrawer = function() {
+  document.getElementById('ipadDrawer').classList.remove('open');
+  document.getElementById('ipadOverlay').classList.remove('show');
+};
+
+window.syncPuzzleInput = function(val) {
+  const mainInp = document.getElementById('puzzleInp');
+  if (mainInp) { mainInp.value = val; previewPuzzle(val); }
+};
+
+function updateIpadScores() {
+  if (!gameData) return;
+  const players = gameData.players || {};
+  const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
+  const ranks = ['🥇','🥈','🥉'];
+  const el = document.getElementById('ipadScoreRows');
+  if (!el) return;
+  el.innerHTML = sorted.map(([id, p], i) => `
+    <div class="ipad-score-row">
+      <div style="font-size:18px;min-width:26px;">${ranks[i] || i+1}</div>
+      <div style="font-size:20px;">${p.avatar || '🎲'}</div>
+      <div style="flex:1;font-size:14px;font-weight:700;color:${p.color || 'var(--text)'};">${p.name}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);">${p.totalScore || 0}</div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--muted);">No players yet</div>';
+}
+
+// Close drawer on swipe down
+(function() {
+  let startY = 0;
+  const drawer = document.getElementById('ipadDrawer');
+  if (!drawer) return;
+  drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  drawer.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 60) closeIpadDrawer();
+  }, { passive: true });
+})();
+
+
+
+
+
+window.toggleIpadDrawer = function() {
+  const drawer = document.getElementById('ipadDrawer');
+  const overlay = document.getElementById('ipadOverlay');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('show');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('show');
+    updateIpadScores();
+    // Sync input values from main fields
+    const mp = document.getElementById('puzzleInp');
+    const mc = document.getElementById('categoryInp');
+    const mr = document.getElementById('roundTypeInp');
+    if (mp) document.getElementById('ipadPuzzleInp').value = mp.value;
+    if (mc) document.getElementById('ipadCategoryInp').value = mc.value;
+    if (mr) document.getElementById('ipadRoundTypeInp').value = mr.value;
+  }
+};
+
+window.closeIpadDrawer = function() {
+  document.getElementById('ipadDrawer').classList.remove('open');
+  document.getElementById('ipadOverlay').classList.remove('show');
+};
+
+window.syncPuzzleInput = function(val) {
+  const mainInp = document.getElementById('puzzleInp');
+  if (mainInp) { mainInp.value = val; previewPuzzle(val); }
+};
+
+function updateIpadScores() {
+  if (!gameData) return;
+  const players = gameData.players || {};
+  const sorted = Object.entries(players).sort((a, b) => b[1].totalScore - a[1].totalScore);
+  const ranks = ['🥇','🥈','🥉'];
+  const el = document.getElementById('ipadScoreRows');
+  if (!el) return;
+  el.innerHTML = sorted.map(([id, p], i) => `
+    <div class="ipad-score-row">
+      <div style="font-size:18px;min-width:26px;">${ranks[i] || i+1}</div>
+      <div style="font-size:20px;">${p.avatar || '🎲'}</div>
+      <div style="flex:1;font-size:14px;font-weight:700;color:${p.color || 'var(--text)'};">${p.name}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);">${p.totalScore || 0}</div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--muted);">No players yet</div>';
+}
+
+// Close drawer on swipe down
+(function() {
+  let startY = 0;
+  const drawer = document.getElementById('ipadDrawer');
+  if (!drawer) return;
+  drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  drawer.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 60) closeIpadDrawer();
+  }, { passive: true });
+})();
+
+
+
+
+
+
 </script>
+
+<!-- iPad mode drawer -->
+<button class="ipad-toggle" id="ipadToggleBtn" onclick="toggleIpadDrawer()">⚙ CONTROLS</button>
+<div class="ipad-overlay" id="ipadOverlay" onclick="closeIpadDrawer()"></div>
+<div class="ipad-drawer" id="ipadDrawer">
+  <div class="ipad-drawer-handle"></div>
+  <div class="ipad-drawer-title">Host Controls</div>
+
+  
+  <div class="ipad-section">
+    <div class="ipad-section-label">Turn</div>
+    <div class="ipad-btn-grid">
+      <button class="btn btn-gold" onclick="nextTurn();closeIpadDrawer()">Next Turn ></button>
+      <button class="btn btn-ghost" onclick="endRound();closeIpadDrawer()">End Round</button>
+      <button class="btn btn-ghost" onclick="revealAll();closeIpadDrawer()" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
+      <button class="btn btn-ghost" onclick="hostSpin();closeIpadDrawer()">🎡 Spin</button>
+    </div>
+  </div>
+
+  
+  <div class="ipad-section">
+    <div class="ipad-section-label">Set Puzzle</div>
+    <input class="inp" id="ipadPuzzleInp" placeholder="PUZZLE TEXT..." style="margin-bottom:6px;text-transform:uppercase;font-size:16px;" oninput="syncPuzzleInput(this.value)">
+    <input class="inp" id="ipadCategoryInp" placeholder="Category..." style="margin-bottom:6px;font-size:16px;" oninput="document.getElementById('categoryInp').value=this.value">
+    <select class="sel" id="ipadRoundTypeInp" style="width:100%;margin-bottom:8px;" onchange="document.getElementById('roundTypeInp').value=this.value">
+      <option value="standard">Standard Round</option>
+      <option value="tossup">[!] Toss-Up</option>
+      <option value="speedup">🚀 Speed-Up</option>
+      <option value="bonus">🌟 Bonus Round</option>
+    </select>
+    <button class="btn btn-gold" style="width:100%;" onclick="setPuzzle();closeIpadDrawer()">Set Puzzle & Start Round</button>
+  </div>
+
+  
+  <div class="ipad-section">
+    <div class="ipad-section-label">Scores</div>
+    <div id="ipadScoreRows"></div>
+  </div>
+
+  
+  <div class="ipad-section">
+    <div class="ipad-section-label">Drinks</div>
+    <div class="ipad-btn-grid">
+      <button class="btn btn-ghost" onclick="sendDrink('sip','all','Everyone sips!')" style="border-color:rgba(243,156,18,.35);color:var(--amber);">🍺 All Sip</button>
+      <button class="btn btn-ghost" onclick="sendDrink('chug','all','Everyone chug!')" style="border-color:rgba(226,75,74,.35);color:var(--red);">🍻 All Chug</button>
+      <button class="btn btn-ghost" onclick="sendDrink('shot','all','Shots!')" style="border-color:rgba(41,128,185,.35);color:var(--blue);">🥃 All Shot</button>
+      <button class="btn btn-ghost" onclick="addJP(1)" style="border-color:rgba(245,197,24,.35);color:var(--gold);">+$1 Jackpot</button>
+    </div>
+  </div>
+
+  
+  <div class="ipad-section">
+    <div class="ipad-section-label">Category Vote</div>
+    <button class="btn btn-ghost btn-full" style="border-color:rgba(52,152,219,.35);color:var(--blue);" onclick="startCategoryVote();closeIpadDrawer()">📊 Start Category Vote</button>
+  </div>
+
+  
+  <div class="ipad-section">
+    <button class="btn btn-red btn-full" onclick="endGame()">🏁 END GAME</button>
+  </div>
+</div>
 </body>
 </html>
