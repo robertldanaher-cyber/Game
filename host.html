@@ -1250,7 +1250,12 @@ function buildBonusLetterUI(){
         document.getElementById('startBonusTimerBtn').disabled=false;
         setAnnounce('All bonus letters chosen!','Start the 10-second timer!');
       } else {
-        setAnnounce(`${l} revealed!`,`Pick ${remaining>0?remaining+' more consonant'+(remaining!==1?'s':''):''}${remaining>0&&vowRemain>0?' + ':''}${vowRemain>0?vowRemain+' vowel':''}`);
+        // Build announce string without nested template literals (syntax error fix)
+        let pickMsg='';
+        if(remaining>0) pickMsg+=remaining+' more consonant'+(remaining!==1?'s':'');
+        if(remaining>0&&vowRemain>0) pickMsg+=' + ';
+        if(vowRemain>0) pickMsg+=vowRemain+' vowel';
+        setAnnounce(l+' revealed!','Pick '+pickMsg);
       }
     };
     wrap.appendChild(btn);
@@ -1546,7 +1551,13 @@ window.setPuzzle=async function(){
   });
   document.getElementById('puzzleInp').value='';document.getElementById('categoryInp').value='';
   addLog(`🧩 Puzzle: "${puzzle}" [${cat}] [${rtype}]`);
-  setAnnounce(`Category: ${cat}`,rtype==='tossup'?'Toss-Up — reveal letters one by one!':rtype==='speedup'?'Speed-Up — spin for base value!':rtype==='bonus'?`Bonus Round! RSTLNE filled. Player picks 3+1.`:`${players[order[0]]?.name} goes first!`);
+  // Avoid nested template literals for browser compat
+  let roundStartMsg;
+  if(rtype==='tossup') roundStartMsg='Toss-Up — reveal letters one by one!';
+  else if(rtype==='speedup') roundStartMsg='Speed-Up — spin for base value!';
+  else if(rtype==='bonus') roundStartMsg='Bonus Round! RSTLNE filled. Player picks 3+1.';
+  else roundStartMsg=(players[order[0]]?.name||'?')+' goes first!';
+  setAnnounce('Category: '+cat, roundStartMsg);
   startTimerDisplay(Date.now(),td);
 };
 
