@@ -335,10 +335,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
       <!-- Difficulty filter -->
       <div style="display:flex;gap:5px;margin-bottom:8px;" id="diffFilter">
-        <button class="diff-btn active" data-diff="easy" onclick="setDiff('easy',this)">😊 Easy</button>
-        <button class="diff-btn" data-diff="medium" onclick="setDiff('medium',this)">🔥 Medium</button>
-        <button class="diff-btn" data-diff="hard" onclick="setDiff('hard',this)">💀 Hard</button>
-        <button class="diff-btn" data-diff="all" onclick="setDiff('all',this)">🎲 All</button>
+        <button class="diff-btn active" data-diff="easy">😊 Easy</button>
+        <button class="diff-btn" data-diff="medium">🔥 Medium</button>
+        <button class="diff-btn" data-diff="hard">💀 Hard</button>
+        <button class="diff-btn" data-diff="all">🎲 All</button>
       </div>
 
       <!-- Category tiles -->
@@ -2065,7 +2065,7 @@ let currentCat = null;
 let selectedPuzzle = null;
 let currentPickerList = [];
 
-function setDiff(diff, btn) {
+window.setDiff = function(diff, btn) {
   currentDiff = diff;
   document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -2089,7 +2089,7 @@ function renderCatTiles() {
   });
 }
 
-function selectCategory(id, tileEl) {
+window.selectCategory = function(id, tileEl) {
   currentCat = id;
   document.querySelectorAll('.cat-tile').forEach(t => t.classList.remove('selected'));
   // Always find the actual .cat-tile wrapper even if a child element was passed
@@ -2120,7 +2120,7 @@ function selectCategory(id, tileEl) {
   renderPuzzlePicker(id);
 }
 
-function renderPuzzlePicker(catId) {
+window.renderPuzzlePicker = function(catId) {
   const wrap = document.getElementById('puzzlePickerWrap');
   const list = document.getElementById('puzzlePicker');
   const label = document.getElementById('pickerLabel');
@@ -2179,10 +2179,17 @@ window.onManualPuzzleInput = function(val) {
 
 // Init on page load
 setTimeout(() => {
+  // Wire difficulty buttons via event delegation (module scope fix)
+  document.getElementById('diffFilter').addEventListener('click', function(e) {
+    const btn = e.target.closest('.diff-btn');
+    if (!btn) return;
+    window.setDiff(btn.dataset.diff, btn);
+  });
+
   renderCatTiles();
-  // Default to Minnesota Easy -- tiles now have event listeners, just call selectCategory directly
-  selectCategory('minnesota', document.querySelector('[data-catid="minnesota"]'));
-  setDiff('easy', document.querySelector('.diff-btn'));
+  // Default to Minnesota Easy
+  window.selectCategory('minnesota', document.querySelector('[data-catid="minnesota"]'));
+  window.setDiff('easy', document.querySelector('.diff-btn[data-diff="easy"]'));
 }, 800);
 
 window.setPuzzle=async function(){
