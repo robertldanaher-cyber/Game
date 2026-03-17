@@ -394,7 +394,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
       <!-- Manual entry (collapsible) -->
       <details id="manualEntryDetails" style="margin-bottom:7px;">
-        <summary style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 0;list-style:none;">✏️ Manual Entry</summary>
+        <summary style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 0;list-style:none;">✏️ Manual Entry (optional -- or pick from the list above)</summary>
         <div style="margin-top:7px;">
           <input class="inp" id="puzzleInp" placeholder="TYPE PUZZLE TEXT..." style="margin-bottom:5px;text-transform:uppercase;font-size:14px;" oninput="previewPuzzle(this.value);onManualPuzzleInput(this.value)">
           <select class="sel" id="categoryInp" style="margin-bottom:5px;font-size:14px;width:100%;">
@@ -919,6 +919,7 @@ window.startCategoryVote = async function() {
   await update(ref(db, `games/${gameId}`), {
     categoryVote: { options, votes: {}, active: true, ts: Date.now() }
   });
+  ahMajorityLocked = false;
   document.getElementById('categoryVotePanel').classList.remove('hidden');
   const cpEl = document.getElementById('catPoolCount');
   if (cpEl) cpEl.textContent = ALL_CATEGORIES.length + ' categories in pool';
@@ -1017,11 +1018,20 @@ function showVoteRecs(chosen) {
       '<div class="ppi-diff ppi-' + p.d + '">' + p.d + '</div></div>'
     ).join('');
   } else {
-    // No matches -- open manual entry
-    const det = document.getElementById('manualEntryDetails');
-    if (det) det.open = true;
-    addLog('No preset puzzles for "' + chosen + '" -- manual entry opened');
+    // No matches -- open manual entry only if not autoHost
+    if (!gameData?.autoHost) {
+      const det = document.getElementById('manualEntryDetails');
+      if (det) det.open = true;
+    }
+    addLog('No preset puzzles for "' + chosen + '" -- ' + (gameData?.autoHost ? 'auto host will pick' : 'manual entry opened'));
   }
+}
+
+let ahMajorityLocked = false; // prevent double-firing
+
+function getMajorityThreshold(playerCount) {
+  // 2 players = 2, 3 = 2, 4 = 3, 5 = 3, 6 = 4
+  return Math.ceil((playerCount + 1) / 2);
 }
 
 function renderCategoryVote(g) {
@@ -1033,19 +1043,54 @@ function renderCategoryVote(g) {
     count: Object.values(votes || {}).filter(v => v === i).length
   }));
   const totalVotes = Object.keys(votes || {}).length;
-  const maxVotes = Math.max(...tallies.map(t => t.count), 1);
   const playerCount = Object.keys(g.players || {}).length;
+  const majority = getMajorityThreshold(playerCount);
+  const maxCount = Math.max(...tallies.map(t => t.count), 0);
+  const maxVotes = Math.max(maxCount, 1);
+  const hasMajority = maxCount >= majority;
+
   document.getElementById('voteOptions').innerHTML = tallies.map((t, i) => {
     const pct = totalVotes ? Math.round((t.count / totalVotes) * 100) : 0;
     const isWinning = t.count === maxVotes && t.count > 0;
-    return `<div class="vote-opt ${isWinning ? 'vote-winner' : ''}">
-      <div class="vote-opt-label">${t.cat}</div>
-      <div class="vote-bar-outer"><div class="vote-bar-inner" style="width:${pct}%"></div></div>
-      <div class="vote-count-lbl">${t.count}</div>
-    </div>`;
+    return '<div class="vote-opt ' + (isWinning ? 'vote-winner' : '') + '">' +
+      '<div class="vote-opt-label">' + t.cat + '</div>' +
+      '<div class="vote-bar-outer"><div class="vote-bar-inner" style="width:' + pct + '%"></div></div>' +
+      '<div class="vote-count-lbl">' + t.count + '</div>' +
+      '</div>';
   }).join('');
-  document.getElementById('voteStatusText').textContent =
-    `${totalVotes} / ${playerCount} voted${totalVotes === playerCount ? '  --  all in!' : ''}`;
+
+  const statusEl = document.getElementById('voteStatusText');
+  const lockBtn = document.getElementById('lockVoteBtn');
+
+  if (hasMajority && !ahMajorityLocked) {
+    ahMajorityLocked = true;
+    // Stop the countdown timer
+    if (voteCountdownTimer) { clearInterval(voteCountdownTimer); voteCountdownTimer = null; }
+    document.getElementById('voteCountdown').textContent = 'Majority!';
+    // Highlight the lock button and prompt
+    if (lockBtn) {
+      lockBtn.textContent = 'Lock In Winner ->  Ready to proceed?';
+      lockBtn.style.background = 'rgba(39,174,96,.2)';
+      lockBtn.style.borderColor = 'var(--green)';
+      lockBtn.style.color = 'var(--green)';
+    }
+    statusEl.textContent = totalVotes + ' / ' + playerCount + ' voted  --  majority reached! Lock in?';
+    statusEl.style.color = 'var(--green)';
+    // Auto-lock after 5 seconds if host doesn't click
+    setTimeout(() => {
+      if (gameData?.categoryVote?.active) lockCategoryVote();
+    }, 5000);
+  } else if (!hasMajority) {
+    ahMajorityLocked = false;
+    if (lockBtn) {
+      lockBtn.textContent = 'Lock In Winner ->';
+      lockBtn.style.background = '';
+      lockBtn.style.borderColor = '';
+      lockBtn.style.color = '';
+    }
+    statusEl.textContent = totalVotes + ' / ' + playerCount + ' voted  (need ' + majority + ' for majority)';
+    statusEl.style.color = '';
+  }
 }
 
 window.hostSpin=function(){
@@ -1183,6 +1228,8 @@ window.createGame=async function(){
   document.getElementById('endGamePanel').style.display='block';
   try{sessionStorage.setItem('wom_host_gameId',gameId);}catch(e){} // iOS private
   subscribeGame();
+  // Clear any stale UI from previous game
+  document.getElementById('hostPlayerList').innerHTML = '';
   addLog('🎮 Game ' + gameId + ' created' + (autoHost ? ' [AUTO HOST]' : ''));
   if (autoHost && autoHostPuzzle) {
     await update(ref(db,'games/'+gameId), {
@@ -1225,6 +1272,16 @@ function renderHostUI(g){
     handleIncomingActions(g);
     showRoundInfo(g);
     if(g.categoryVote?.active) renderCategoryVote(g); // Fix 11
+    // If autoHost and puzzle already loaded, reflect in UI
+    if(g.autoHost && g.currentPuzzle) {
+      const inp = document.getElementById('puzzleInp');
+      const btn = document.getElementById('setPuzzleBtn');
+      if(inp && !inp.value) inp.value = g.currentPuzzle;
+      if(btn && btn.disabled) {
+        btn.disabled = false;
+        btn.textContent = 'Start Round: ' + g.currentPuzzle.substring(0,20) + (g.currentPuzzle.length>20?'...':'');
+      }
+    }
   }
   if(g.status==='ended'){setPhase('end');}
 }
@@ -2340,7 +2397,9 @@ window.selectPuzzleItem = function(idx) {
   if (selWrap) selWrap.style.display = 'block';
   if (selText) selText.textContent = p.p;
   if (selMeta) selMeta.textContent = p.c + '  |  ' + p.d;
-  document.getElementById('setPuzzleBtn').disabled = false;
+  // Enable and update button label
+  const btn = document.getElementById('setPuzzleBtn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Start Round: ' + p.p.substring(0,20) + (p.p.length>20?'...':''); }
   document.querySelectorAll('.puzzle-pick-item').forEach((el, i) => {
     el.classList.toggle('selected', i === idx);
   });
@@ -2379,10 +2438,17 @@ setTimeout(() => {
 }, 800);
 
 window.setPuzzle=async function(){
-  const puzzle=document.getElementById('puzzleInp').value.trim().toUpperCase();
-  const cat=document.getElementById('categoryInp').value.trim()||'Puzzle';
+  if(!gameId){alert('Create a game first!');return;}
+  // Use typed puzzle, or fall back to selectedPuzzle from bank
+  let puzzle=document.getElementById('puzzleInp').value.trim().toUpperCase();
+  let cat=document.getElementById('categoryInp').value.trim();
+  if(!puzzle && selectedPuzzle) {
+    puzzle = selectedPuzzle.p;
+    cat = selectedPuzzle.c || cat;
+  }
+  if(!puzzle){toast('Pick a puzzle from the list or use Manual Entry!');return;}
+  cat = cat || 'Phrase';
   const rtype=document.getElementById('roundTypeInp').value;
-  if(!puzzle){alert('Enter a puzzle!');return;}if(!gameId){alert('Create a game first!');return;}
   bonusExtraLetters=[];
   const players=gameData?.players||{};
   const order=Object.entries(players).sort((a,b)=>a[1].slot-b[1].slot).map(([id])=>id);
@@ -2398,6 +2464,9 @@ window.setPuzzle=async function(){
     spinRequested:null,spinRequestBy:null,solveAttempt:null,solveBy:null,buzzedBy:null,
   });
   document.getElementById('puzzleInp').value='';document.getElementById('categoryInp').value='';
+  selectedPuzzle=null;
+  const btn=document.getElementById('setPuzzleBtn');
+  if(btn){btn.disabled=true;btn.textContent='Set Puzzle & Start Round';}
   addLog(`🧩 Puzzle: "${puzzle}" [${cat}] [${rtype}]`);
   // Avoid nested template literals for browser compat
   let roundStartMsg;
@@ -2411,10 +2480,14 @@ window.setPuzzle=async function(){
 
 window.launchGame=async function(){
   if(!gameId||!gameData)return;
-  const puzzle=document.getElementById('puzzleInp').value.trim().toUpperCase();
-  const cat=document.getElementById('categoryInp').value.trim()||'Phrase';
+  let puzzle=document.getElementById('puzzleInp').value.trim().toUpperCase();
+  let cat=document.getElementById('categoryInp').value.trim()||'Phrase';
   const rtype=document.getElementById('roundTypeInp').value;
-  if(!puzzle){alert('Enter the first puzzle before launching!');return;}
+  // Use selectedPuzzle from bank if input is empty
+  if(!puzzle && selectedPuzzle){ puzzle=selectedPuzzle.p; cat=selectedPuzzle.c||cat; }
+  // Use autoHost pre-loaded puzzle if still empty
+  if(!puzzle && gameData?.currentPuzzle){ puzzle=gameData.currentPuzzle; cat=gameData.currentCategory||cat; }
+  if(!puzzle){toast('Pick a puzzle from the bank or use Manual Entry first!');return;}
   const players=gameData.players||{};
   const order=Object.entries(players).sort((a,b)=>a[1].slot-b[1].slot).map(([id])=>id);
   const td=gameData.turnDuration||45;
