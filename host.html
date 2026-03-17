@@ -745,6 +745,7 @@ function monitorConnection() {
   onValue(connRef, snap => {
     const el = document.getElementById('fbStatus');
     if (snap.val() === true) {
+      firebaseConnected = true;
       el.textContent = '🟢 Firebase connected';
       el.className = 'fb-ok';
       // Auto-reconnect if we have a saved game
@@ -760,6 +761,7 @@ function monitorConnection() {
         } catch(e) {}
       }
     } else {
+      firebaseConnected = false;
       el.textContent = '🔴 Firebase disconnected';
       el.className = 'fb-err';
     }
@@ -1687,9 +1689,11 @@ async function advanceTurn(){
     spinRequested:null,spinRequestBy:null,solveAttempt:null,solveBy:null,
   });
   const pn=gameData.players?.[nextId]?.name||'?';
-  setAnnounce(`${pn}'s turn!`,'Spin the wheel!');
-  addLog(`-> ${pn}'s turn`);
-  startTimerDisplay(Date.now(),td);
+  setAnnounce(pn + "'s turn!", 'Spin the wheel!');
+  addLog('-> ' + pn + "'s turn");
+  if(gameData?.currentPuzzle && gameData?.status==='playing' && !gameData?.freePlay) {
+    startTimerDisplay(Date.now(), td);
+  }
 }
 
 // Auto-advance when timer expires (#1)
@@ -1705,31 +1709,56 @@ function stopAllTimers() {
   if (bar) { bar.style.width = '100%'; bar.className = 'timer-bar'; }
 }
 
-function startTimerDisplay(start,dur){
-  if(timerInterval)clearInterval(timerInterval);
-  let autoAdvanced=false;
-  timerInterval=setInterval(()=>{
-    const elapsed=(Date.now()-start)/1000;
-    const remaining=Math.max(0,dur-elapsed);
-    const pct=(remaining/dur)*100;
-    const te=document.getElementById('bigTimer');
-    te.textContent=Math.ceil(remaining);
-    te.className='big-timer'+(remaining<10?' warn':'');
-    const bar=document.getElementById('hostTimerBar');
-    bar.style.width=pct+'%';bar.className='timer-bar'+(pct<25?' warn':'');
-    if(remaining<=0&&!autoAdvanced){
-      autoAdvanced=true;clearInterval(timerInterval);timerInterval=null;
-      if(gameData?.roundSolved) return;
-      // Fix 12: in free play mode skip auto-advance  --  host controls everything
-      if(gameData?.status==='playing'&&gameData.roundType!=='tossup'&&!gameData.freePlay){
-        const tid=gameData.currentTurnPlayerId;
-        if(tid)sendDrinkInternal('sip',tid,'Time\'s up! Take a sip  --  turn passes.');
-        addLog(`[T] Time up  --  auto-advancing turn`);
-        setAnnounce('Time\'s up!','Turn advances automatically.');
-        setTimeout(()=>advanceTurn(),1200);
-      }
+// Track Firebase connection state for timer (set by monitorConnection)
+let firebaseConnected = false;
+
+function startTimerDisplay(start, dur) {
+  if (timerInterval) clearInterval(timerInterval);
+  if (!dur || dur <= 0) return; // free play -- no timer
+  let autoAdvanced = false;
+  let pausedElapsed = 0; // track time lost to disconnection
+  let lastTickTime = Date.now();
+
+  timerInterval = setInterval(() => {
+    // Only count down when game is active AND Firebase is connected
+    const g = gameData;
+    if (!g) return;
+    if (!firebaseConnected) { lastTickTime = Date.now(); return; } // paused -- don't count
+    if (g.status !== 'playing') { stopAllTimers(); return; }
+    if (g.roundSolved) { stopAllTimers(); return; }
+    if (!g.currentPuzzle) return; // no puzzle yet -- don't count
+    if (!g.currentTurnPlayerId) return; // no active player -- don't count
+
+    // Check all players are still connected (have joined recently)
+    const players = Object.values(g.players || {});
+    if (players.length < 2) return; // need at least 2 players
+
+    const elapsed = (Date.now() - start) / 1000;
+    const remaining = Math.max(0, dur - elapsed);
+    const pct = (remaining / dur) * 100;
+
+    const te = document.getElementById('bigTimer');
+    const bar = document.getElementById('hostTimerBar');
+    if (te) { te.textContent = Math.ceil(remaining); te.className = 'big-timer' + (remaining < 10 ? ' warn' : ''); }
+    if (bar) { bar.style.width = pct + '%'; bar.className = 'timer-bar' + (pct < 25 ? ' warn' : ''); }
+
+    if (remaining <= 0 && !autoAdvanced) {
+      autoAdvanced = true;
+      clearInterval(timerInterval); timerInterval = null;
+      if (g.roundSolved || g.status !== 'playing') return;
+      // Free play -- no auto-advance
+      if (g.freePlay) return;
+      // Toss-up -- no penalty
+      if (g.roundType === 'tossup') return;
+      // Auto Host -- player handles their own turn
+      if (g.autoHost) return;
+      const tid = g.currentTurnPlayerId;
+      if (tid) sendDrinkInternal('sip', tid, "Time's up! Take a sip -- turn passes.");
+      addLog('Time up -- auto-advancing turn');
+      setAnnounce("Time's up!", 'Turn advances automatically.');
+      setTimeout(() => advanceTurn(), 1200);
     }
-  },500);
+  }, 500);
 }
 
 window.nextTurn=async function(){advanceTurn();};
@@ -2515,7 +2544,7 @@ window.launchGame=async function(){
   document.getElementById('puzzleInp').value='';document.getElementById('categoryInp').value='';
   addLog(`🎮 Game launched! Round 1  --  ${cat}`);
   setAnnounce(`Round 1  --  ${cat}!`,`${players[order[0]]?.name} spins first!`);
-  startTimerDisplay(Date.now(),td);
+  if(gameData?.currentPuzzle && !gameData?.freePlay) startTimerDisplay(Date.now(),td);
 };
 
 
@@ -2743,7 +2772,8 @@ function renderTurnState(g){
   const labels={spin:'Waiting to spin',guess_consonant:'Guessing consonant',buy_vowel:'Buying vowel',solve:'Attempting solve'};
   document.getElementById('turnPhaseDisp').textContent=labels[g.turnPhase||'spin']||g.turnPhase;
   document.getElementById('hostSpinBtn').style.display=g.turnPhase==='spin'&&g.roundType!=='tossup'?'block':'none';
-  if(g.turnStartTime&&g.turnDuration)startTimerDisplay(g.turnStartTime,g.turnDuration);
+  if(g.turnStartTime&&g.turnDuration&&g.currentPuzzle&&g.status==='playing'&&!g.roundSolved)
+    startTimerDisplay(g.turnStartTime,g.turnDuration);
 }
 
 function renderHostScoreboard(g){
