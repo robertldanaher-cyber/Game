@@ -148,8 +148,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .key:hover:not([disabled]){border-color:var(--gold);color:var(--gold);background:rgba(245,197,24,.07);}
 .key.vowel-key{border-color:rgba(52,152,219,.3);color:var(--blue);}
 .key.vowel-key:hover:not([disabled]){border-color:var(--blue);background:rgba(52,152,219,.1);}
-.key.k-hit{background:rgba(46,204,113,.1);border-color:rgba(46,204,113,.3);color:var(--green);cursor:not-allowed;}
-.key.k-miss{background:rgba(226,75,74,.08);border-color:rgba(226,75,74,.2);color:var(--red);cursor:not-allowed;}
+.key.k-hit{background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:var(--green);cursor:not-allowed;opacity:0.7;}
+.key.k-miss{background:rgba(226,75,74,.12);border-color:rgba(226,75,74,.35);color:var(--red);cursor:not-allowed;opacity:0.7;text-decoration:line-through;}
 
 /* Solve */
 .solve-inp{width:100%;padding:11px;background:var(--surface2);border:1.5px solid var(--gold);border-radius:9px;color:var(--text);font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;outline:none;text-transform:uppercase;margin-bottom:7px;}
@@ -374,12 +374,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       </div>
     </div>
     <!-- Spin wheel overlay -- shows during spin, board always visible behind -->
-    <div class="spin-wheel-wrap" id="spinWheelWrap" onclick="document.getElementById('spinWheelWrap').classList.remove('show')">
+    <div class="spin-wheel-wrap" id="spinWheelWrap">
       <div class="spin-wheel-label">🎡 SPINNING!</div>
       <div class="spin-wheel-spinner-name" id="spinnerName"></div>
       <div class="spin-wheel-ptr"></div>
       <canvas id="playerWheelCanvas" width="400" height="400"></canvas>
-      <div class="spin-wheel-dismiss">Tap to dismiss</div>
+      <button onclick="document.getElementById('spinWheelWrap').classList.remove('show')" style="margin-top:16px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--muted);border-radius:8px;padding:6px 18px;font-size:12px;cursor:pointer;font-family:'Nunito',sans-serif;">Dismiss</button>
     </div>
 
 
@@ -391,8 +391,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       <div class="board-grid" id="boardGrid"></div>
     </div>
 
-    <!-- Used letters A - Z -->
+    <!-- Used letters A-Z -->
     <div class="used-letters" id="usedLettersGrid"></div>
+    <div style="display:flex;gap:10px;font-size:10px;color:var(--muted);margin-bottom:6px;margin-top:-4px;">
+      <span style="color:var(--green);">■ Hit</span>
+      <span style="color:var(--red);">■ Miss</span>
+      <span>□ Unused</span>
+    </div>
 
     <!-- Wildcard badge -->
     <div class="wildcard-badge" id="wildcardBadge">
@@ -998,9 +1003,11 @@ let lastSpinSignalTs = 0;
 function checkSpinSignal(g) {
   const sig = g.spinSignal;
   if (!sig || sig.ts === lastSpinSignalTs) return;
+  // Only show wheel for recent spins (within last 8 seconds)
+  const age = Date.now() - (sig.ts || 0);
+  if (age > 8000) { lastSpinSignalTs = sig.ts; return; }
   lastSpinSignalTs = sig.ts;
   if (!pWheelSpinning) {
-    // Get current spinner name
     const players = g.players || {};
     const spinner = players[g.currentTurnPlayerId];
     const name = spinner ? spinner.name : '';
@@ -1125,6 +1132,9 @@ function checkAutoHostRoundAdvance(g) {
 }
 
 async function ahStartNextRound(g) {
+  // Clear cached values so new puzzle shows cleanly
+  lastKnownCategory = '';
+  lastKnownPuzzle = '';
   if (!g.autoHost || !gameId) return;
   const currentRound = g.currentRound || 1;
   const newRound = currentRound + 1;
@@ -1175,6 +1185,10 @@ async function ahStartNextRound(g) {
 }
 
 // --- RENDER GAME ---
+// Cache last known category and puzzle to survive momentary blanks
+let lastKnownCategory = '';
+let lastKnownPuzzle = '';
+
 function renderGame(g){
   updateFreePlayBadge(g); // Fix 12
   // Update identity bar
@@ -1184,8 +1198,14 @@ function renderGame(g){
     if(nameEl) nameEl.textContent = (myEntry.avatar||'') + ' ' + myEntry.name;
   }
   document.getElementById('rndType').textContent=rtLabel(g.roundType);
-  document.getElementById('jpPill').textContent=`🏆 $${g.jackpot||0}`;
-  document.getElementById('catVal').textContent=(g.currentCategory||'---').toUpperCase();
+  document.getElementById('jpPill').textContent='🏆 $'+(g.jackpot||0);
+
+  // Use cached values if Firebase momentarily has empty fields
+  if(g.currentCategory) lastKnownCategory = g.currentCategory;
+  if(g.currentPuzzle) lastKnownPuzzle = g.currentPuzzle;
+  const displayCat = lastKnownCategory || g.currentCategory || '';
+  document.getElementById('catVal').textContent = displayCat ? displayCat.toUpperCase() : '---';
+
   renderBoard(g);
   renderUsedLetters(g);
   renderScoreboard(g);
@@ -1205,7 +1225,7 @@ function rtLabel(t){return{standard:'Standard Round',tossup:'[!] Toss-Up Round',
 
 // --- BOARD ---
 function renderBoard(g){
-  const puzzle=(g.currentPuzzle||'').toUpperCase();
+  const puzzle=((g.currentPuzzle||lastKnownPuzzle||'')).toUpperCase();
   const revealed=new Set((g.revealedLetters||'').toUpperCase().split('').filter(Boolean));
   const solved=!!g.roundSolved;
   const grid=document.getElementById('boardGrid');
@@ -1357,9 +1377,20 @@ function buildKB(g,mode){
   const letters=mode==='vowel'?['A','E','I','O','U']:CONSONANTS;
   const container=document.getElementById(mode==='vowel'?'keysVowel':'keysConsonant');
   container.innerHTML=letters.map(l=>{
-    const used=called[l]!==undefined;
-    return`<button class="key ${VOWELS.has(l)?'vowel-key':''} ${used?(called[l]?'k-hit':'k-miss'):''}" 
-      ${used?'disabled':''} onclick="guessLetter('${l}')">${l}</button>`;
+    const used = called[l] !== undefined;
+    const isHit = used && called[l];
+    const isMiss = used && !called[l];
+    const cls = ['key',
+      VOWELS.has(l) ? 'vowel-key' : '',
+      isHit ? 'k-hit' : '',
+      isMiss ? 'k-miss' : ''
+    ].filter(Boolean).join(' ');
+    // Show letter + small indicator: green dot for hit, red x for miss
+    const indicator = isHit ? '<span style="font-size:8px;display:block;line-height:1;margin-top:-2px;">✓</span>'
+                    : isMiss ? '<span style="font-size:8px;display:block;line-height:1;margin-top:-2px;">✗</span>'
+                    : '';
+    return '<button class="' + cls + '" ' + (used ? 'disabled' : '') +
+      ' onclick="guessLetter('' + l + '')">' + l + indicator + '</button>';
   }).join('');
 }
 
@@ -1753,10 +1784,16 @@ function updateDrinkLogUI() {
 
 // --- DRINK SIGNAL ---
 function checkDrinkSignal(g){
-  const sig=g.drinkSignal;
+  // Check player-specific drink signal key first (autoHost), then global
+  const myKey='drinkSignal_'+myPlayerId;
+  const sig=g[myKey]||g.drinkSignal;
   if(!sig||sig.ts===lastDrinkTs)return;
+  // Ignore stale signals (older than 10 seconds)
+  if(Date.now()-(sig.ts||0)>10000){lastDrinkTs=sig.ts;return;}
   lastDrinkTs=sig.ts;
-  if(sig.target==='all'||sig.target===myPlayerId){showDrink(sig.type,sig.desc);}
+  if(!myPlayerId)return;
+  const isForMe=g[myKey]?true:(sig.target==='all'||sig.target===myPlayerId);
+  if(isForMe){showDrink(sig.type||'sip',sig.desc||sig.msg||'');}
 }
 function showDrink(type,desc){
   const cfgs={sip:{emoji:'🍺',title:'SIP!',cls:'m-sip'},chug:{emoji:'🍻',title:'CHUG!',cls:'m-chug'},shot:{emoji:'🥃',title:'TAKE A SHOT!',cls:'m-shot'}};
