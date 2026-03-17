@@ -533,12 +533,24 @@ COLORS.forEach((c,i)=>{const b=document.createElement('button');b.className='col
 const VOWELS=new Set(['A','E','I','O','U']);
 const CONSONANTS='BCDFGHJKLMNPQRSTVWXYZ'.split('');
 
-// Reconnect: restore session from sessionStorage (#15)
+// Reconnect: restore session from sessionStorage
+// But if URL has ?code= that differs from saved game, start fresh
 let gameId=null,myPlayerId=null,myName=null;
 try {
+  const _urlParams = new URLSearchParams(window.location.search);
+  const _urlCode = (_urlParams.get('code')||'').toUpperCase().trim();
+  const _savedId = sessionStorage.getItem('wom_gameId')||null;
+  if (_urlCode.length === 4 && _urlCode !== _savedId) {
+    // New invite link -- clear old session completely
+    sessionStorage.clear();
+  }
   gameId=sessionStorage.getItem('wom_gameId')||null;
   myPlayerId=sessionStorage.getItem('wom_playerId')||null;
   myName=sessionStorage.getItem('wom_name')||null;
+  // If URL has a code, never auto-reconnect -- always show fresh join screen
+  if (_urlCode.length === 4) {
+    gameId=null;myPlayerId=null;
+  }
 } catch(e) {} // iOS private browsing
 let mySlot=null;
 let gameData=null,timerInterval=null,lastDrinkTs=0,lastSolveResultTs=0,lastDingTs=0;
@@ -1219,7 +1231,11 @@ function renderScoreboard(g){
 
 // --- TURN UI ---
 function renderTurnUI(g){
-  const isMyTurn=g.currentTurnPlayerId===myPlayerId;
+  // Recover myPlayerId from sessionStorage if somehow lost
+  if(!myPlayerId){
+    try{ myPlayerId=sessionStorage.getItem('wom_playerId')||null; }catch(e){}
+  }
+  const isMyTurn = !!myPlayerId && g.currentTurnPlayerId===myPlayerId;
   const phase=g.turnPhase||'spin';
   const spinVal=g.currentSpinValue;
   const isTossup=g.roundType==='tossup';
@@ -1232,6 +1248,9 @@ function renderTurnUI(g){
 
   if(!isMyTurn&&g.players?.[g.currentTurnPlayerId])
     document.getElementById('waitName').textContent=g.players[g.currentTurnPlayerId].name;
+  // Show who we think we are (debug -- remove after testing)
+  const myEntry = g.players?.[myPlayerId];
+  if(myEntry) document.getElementById('yourNameDisp').textContent=myEntry.name;
 
   // Spin bubble
   const bubble=document.getElementById('spinBubble');
