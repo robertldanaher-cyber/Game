@@ -377,7 +377,52 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
         <summary style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 0;list-style:none;">✏️ Manual Entry</summary>
         <div style="margin-top:7px;">
           <input class="inp" id="puzzleInp" placeholder="TYPE PUZZLE TEXT..." style="margin-bottom:5px;text-transform:uppercase;font-size:14px;" oninput="previewPuzzle(this.value);onManualPuzzleInput(this.value)">
-          <input class="inp" id="categoryInp" placeholder="Category" style="margin-bottom:5px;font-size:14px;">
+          <select class="sel" id="categoryInp" style="margin-bottom:5px;font-size:14px;width:100%;">
+            <option value="">-- Pick a category --</option>
+            <optgroup label="Standard WoF">
+              <option value="Phrase">Phrase</option>
+              <option value="Thing">Thing</option>
+              <option value="Place">Place</option>
+              <option value="Person">Person</option>
+              <option value="What Are You Doing?">What Are You Doing?</option>
+              <option value="Before &amp; After">Before &amp; After</option>
+              <option value="On The Nose">On The Nose</option>
+              <option value="Food &amp; Drink">Food &amp; Drink</option>
+              <option value="Rhyme Time">Rhyme Time</option>
+            </optgroup>
+            <optgroup label="Titles &amp; Quotes">
+              <option value="Movie Title">Movie Title</option>
+              <option value="Movie Quote">Movie Quote</option>
+              <option value="Movie Tagline">Movie Tagline</option>
+              <option value="TV Show">TV Show</option>
+              <option value="TV Quote">TV Quote</option>
+              <option value="Song Title">Song Title</option>
+              <option value="Lyric">Lyric</option>
+              <option value="Quote">Quote</option>
+            </optgroup>
+            <optgroup label="Bar Night">
+              <option value="Bar Life">Bar Life</option>
+              <option value="Event">Event</option>
+              <option value="Nickname">Nickname</option>
+            </optgroup>
+            <optgroup label="Adult">
+              <option value='"Cards Against Humanity"'>"Cards Against Humanity"</option>
+              <option value="Adult Humor">Adult Humor</option>
+              <option value="Dark Humor">Dark Humor</option>
+            </optgroup>
+            <optgroup label="Sports">
+              <option value="Pro Football Team">Pro Football Team</option>
+              <option value="Pro Hockey Team">Pro Hockey Team</option>
+              <option value="Pro Baseball Team">Pro Baseball Team</option>
+              <option value="Pro Basketball Team">Pro Basketball Team</option>
+              <option value="College Team">College Team</option>
+            </optgroup>
+            <optgroup label="Custom">
+              <option value="Fun Fact">Fun Fact</option>
+              <option value="Minnesota">Minnesota</option>
+              <option value="90s-2000s Rap">90s-2000s Rap</option>
+            </optgroup>
+          </select>
         </div>
       </details>
 
@@ -863,15 +908,73 @@ window.lockCategoryVote = async function() {
   }));
   const maxVotes = Math.max(...tallies.map(t => t.count));
   const winners = tallies.filter(t => t.count === maxVotes);
-  const chosen = winners[Math.floor(Math.random() * winners.length)].cat; // random tiebreak
-  // Auto-fill category input
-  document.getElementById('categoryInp').value = chosen;
+  const chosen = winners[Math.floor(Math.random() * winners.length)].cat;
+  // Fill category dropdown -- match select option if possible
+  const catInp = document.getElementById('categoryInp');
+  if (catInp && catInp.tagName === 'SELECT') {
+    let matched = false;
+    for (let i = 0; i < catInp.options.length; i++) {
+      if (catInp.options[i].value.toLowerCase() === chosen.toLowerCase()) {
+        catInp.selectedIndex = i; matched = true; break;
+      }
+    }
+    if (!matched) catInp.value = chosen;
+  } else if (catInp) {
+    catInp.value = chosen;
+  }
   document.getElementById('categoryVotePanel').classList.add('hidden');
-  await update(ref(db, `games/${gameId}`), { categoryVote: null });
-  setAnnounce(`Category: ${chosen}!`, 'Now enter a puzzle and set the round.');
-  addLog(`📊 Category vote locked: ${chosen}`);
-  toast(`Category locked: ${chosen}`);
+  await update(ref(db, 'games/' + gameId), { categoryVote: null });
+  setAnnounce('Category: ' + chosen + '!', 'Pick a puzzle below and start the round.');
+  addLog('Category vote locked: ' + chosen);
+  toast('Category locked: ' + chosen);
+  // Show puzzle recommendations for chosen category
+  showVoteRecs(chosen);
 };
+
+function showVoteRecs(chosen) {
+  if (!chosen || !QUICK_PUZZLES) return;
+  const lower = chosen.toLowerCase();
+  // Collect all puzzles from all banks, tag with tileId
+  const all = Object.entries(QUICK_PUZZLES).flatMap(([tid, arr]) =>
+    arr.map(p => Object.assign({}, p, { tileId: tid }))
+  );
+  // Score each puzzle: exact c match = 2pts, partial match = 1pt
+  const scored = all.map(p => {
+    const pc = (p.c || '').toLowerCase();
+    const score = pc === lower ? 2 : (pc.includes(lower) || lower.includes(pc)) ? 1 : 0;
+    return { ...p, score };
+  }).filter(p => p.score > 0).sort((a, b) => b.score - a.score);
+
+  // Find best tile (most matching puzzles)
+  const tileCounts = {};
+  scored.forEach(p => { tileCounts[p.tileId] = (tileCounts[p.tileId] || 0) + p.score; });
+  const bestTile = Object.entries(tileCounts).sort((a, b) => b[1] - a[1])[0];
+
+  if (bestTile) {
+    // Select that tile -- it will render matching puzzles
+    const tileEl = document.querySelector('[data-catid="' + bestTile[0] + '"]');
+    window.selectCategory(bestTile[0], tileEl);
+    addLog('Showing puzzle suggestions for: ' + chosen);
+  } else if (scored.length > 0) {
+    // No tile match but have puzzles -- show in picker directly
+    currentPickerList = scored.slice(0, 15);
+    const wrap = document.getElementById('puzzlePickerWrap');
+    const list = document.getElementById('puzzlePicker');
+    const label = document.getElementById('pickerLabel');
+    if (wrap) wrap.style.display = 'block';
+    if (label) label.textContent = 'Suggestions: ' + chosen;
+    if (list) list.innerHTML = currentPickerList.map((p, i) =>
+      '<div class="puzzle-pick-item" onclick="selectPuzzleItem(' + i + ')">' +
+      '<div class="ppi-text">' + p.p + '</div>' +
+      '<div class="ppi-diff ppi-' + p.d + '">' + p.d + '</div></div>'
+    ).join('');
+  } else {
+    // No matches -- open manual entry
+    const det = document.getElementById('manualEntryDetails');
+    if (det) det.open = true;
+    addLog('No preset puzzles for "' + chosen + '" -- manual entry opened');
+  }
+}
 
 function renderCategoryVote(g) {
   const cv = g.categoryVote;
