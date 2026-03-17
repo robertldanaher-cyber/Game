@@ -319,8 +319,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <div class="logo-sub">Where Every Spin Has Consequences</div>
     <div class="card">
       <div class="card-title">Join a Game</div>
-      <div class="inp-group"><label>Your Name</label><input class="inp" id="nameInp" placeholder="Enter your name..." maxlength="16" autocomplete="off"></div>
-      <div class="inp-group"><label>Game Code</label><input class="inp" id="codeInp" placeholder="WXYZ" maxlength="4" style="text-transform:uppercase;letter-spacing:5px;font-size:22px;font-weight:800;" autocomplete="off"></div>
+      <div class="inp-group"><label>Your Name</label><input class="inp" id="nameInp" placeholder="Enter your name..." maxlength="16" autocomplete="off" onkeydown="if(event.key==='Enter')window.joinGame()"></div>
+      <div class="inp-group">
+        <label>Game Code</label>
+        <input class="inp" id="codeInp" placeholder="WXYZ" maxlength="4" style="text-transform:uppercase;letter-spacing:5px;font-size:22px;font-weight:800;" autocomplete="off">
+        <div id="codeNote" style="font-size:11px;color:var(--green);margin-top:4px;display:none;">Code from your invite link</div>
+      </div>
       <div class="inp-group">
         <label>Pick an Avatar</label>
         <div class="avatar-grid" id="avatarGrid"></div>
@@ -681,6 +685,27 @@ setTimeout(()=>{document.getElementById('connOverlay').style.display='none';docu
 },900);
 
 document.getElementById('codeInp').addEventListener('input',function(){this.value=this.value.toUpperCase();});
+
+// Auto-fill game code from URL ?code=XXXX (e.g. from QR code scan)
+(function() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlCode = (params.get('code') || '').toUpperCase().trim();
+    if (urlCode.length === 4) {
+      const codeInp = document.getElementById('codeInp');
+      if (codeInp) {
+        codeInp.value = urlCode;
+        codeInp.style.borderColor = 'var(--green)';
+        codeInp.readOnly = true; // lock it -- came from a valid invite link
+        const note = document.getElementById('codeNote');
+        if (note) note.style.display = 'block';
+        // Focus name field so player just types their name
+        const nameInp = document.getElementById('nameInp');
+        if (nameInp) setTimeout(() => nameInp.focus(), 300);
+      }
+    }
+  } catch(e) {}
+})();
 
 // --- JOIN ---
 window.joinGame=async function(){
