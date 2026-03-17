@@ -266,7 +266,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   <div class="topbar-logo">🎡 WHEEL OF MISFORTUNE</div>
   <div class="code-badge" id="tbCode">----</div>
   <div class="status-pill s-lobby" id="tbStatus">LOBBY</div>
-  <div id="fbStatus" style="font-size:11px;padding:3px 10px;border-radius:12px;background:rgba(226,75,74,.15);color:#E24B4A;border:1px solid rgba(226,75,74,.3);">⚡ Connecting...</div>
+  <div id="fbStatus" style="font-size:11px;padding:3px 10px;border-radius:12px;background:rgba(226,75,74,.15);color:#E24B4A;border:1px solid rgba(226,75,74,.3);">[!] Connecting...</div>
   <span style="font-size:12px;color:var(--muted)" id="tbRound"></span>
   <div class="tb-right">
     <div class="jp-display"><div class="jp-lbl">Jackpot</div><div class="jp-val" id="tbJP">$5</div></div>
@@ -347,7 +347,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <div class="btn-row" style="margin-bottom:8px;">
       <button class="btn btn-gold btn-sm" onclick="nextTurn()" id="btnNextTurn">Next Turn ></button>
       <button class="btn btn-ghost btn-sm" onclick="endRound()">End Round</button>
-      <button class="btn btn-ghost btn-sm" id="revealAllBtn" onclick="revealAll()" title="Light up the full board" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
+      <button class="btn btn-ghost btn-sm" id="revealAllBtn" onclick="revealAll()" title="Light up the full board" style="border-color:rgba(245,197,24,.4);color:var(--gold);">[?] Reveal All</button>
     </div>
     <button class="btn btn-full" style="margin-bottom:8px;background:rgba(41,128,185,.15);border:1.5px solid rgba(52,152,219,.5);color:var(--blue);font-size:14px;font-weight:800;padding:11px;" onclick="startCategoryVoteAndShow()">📊 Start Category Vote -- Players Vote Now!</button>
     <!-- Quick Setup -->
@@ -394,7 +394,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
       <!-- Manual entry (collapsible) -->
       <details id="manualEntryDetails" style="margin-bottom:7px;">
-        <summary style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 0;list-style:none;">✏️ Manual Entry (optional -- or pick from the list above)</summary>
+        <summary style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 0;list-style:none;">[?] Manual Entry (optional -- or pick from the list above)</summary>
         <div style="margin-top:7px;">
           <input class="inp" id="puzzleInp" placeholder="TYPE PUZZLE TEXT..." style="margin-bottom:5px;text-transform:uppercase;font-size:14px;" oninput="previewPuzzle(this.value);onManualPuzzleInput(this.value)">
           <select class="sel" id="categoryInp" style="margin-bottom:5px;font-size:14px;width:100%;">
@@ -457,7 +457,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   <!-- End game -->
   <div class="panel" id="endGamePanel" style="display:none;">
     <div class="btn-row" style="margin-bottom:7px;">
-      <button class="btn btn-amber btn-sm" onclick="undoLastAction()" id="undoBtn" title="Undo last scored action" disabled>↩ Undo</button>
+      <button class="btn btn-amber btn-sm" onclick="undoLastAction()" id="undoBtn" title="Undo last scored action" disabled>[?] Undo</button>
       <button class="btn btn-ghost btn-sm" onclick="restartGame()" style="border-color:rgba(39,174,96,.35);color:var(--green);">🔄 Restart</button>
     </div>
     <button class="btn btn-red btn-full" onclick="endGame()">🏁 END GAME & CROWN WINNER</button>
@@ -697,22 +697,22 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-// ── Firebase init with error handling ──
+// -- Firebase init with error handling --
 let app, db;
 try {
   if (!window.FIREBASE_CONFIG || window.FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
-    throw new Error('Firebase config not set — edit firebase-config.js with your project credentials');
+    throw new Error('Firebase config not set  --  edit firebase-config.js with your project credentials');
   }
   app = initializeApp(window.FIREBASE_CONFIG);
   db = getDatabase(app);
 } catch(e) {
-  document.getElementById('fbStatus').textContent = '❌ Config error: ' + e.message;
+  document.getElementById('fbStatus').textContent = '[x] Config error: ' + e.message;
   document.getElementById('fbStatus').className = 'fb-err';
   console.error('Firebase init failed:', e);
 }
 
 // Monitor Firebase connection state
-// ── SAVED GAME BANNER (shown on refresh) ──
+// -- SAVED GAME BANNER (shown on refresh) --
 function showRejoinBanner(code) {
   const banner = document.getElementById('savedGameBanner');
   const codeEl = document.getElementById('savedGameCode');
@@ -879,7 +879,7 @@ function renderCategoryPool() {
   el.innerHTML = ALL_CATEGORIES.map((c, i) => `
     <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface3);border-radius:7px;border:1px solid var(--border);">
       <div style="flex:1;font-size:12px;color:var(--text);">${c}</div>
-      <button onclick="removeCategoryFromPool(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;" title="Remove">✕</button>
+      <button onclick="removeCategoryFromPool(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;" title="Remove">x</button>
     </div>`).join('');
 }
 
@@ -1167,7 +1167,7 @@ async function handleSpinResult(wedge){
 
 // --- CREATE GAME ---
 
-// ── AUTO HOST: pick random puzzle from bank ──
+// -- AUTO HOST: pick random puzzle from bank --
 function pickAutoHostPuzzle(roundNum) {
   if (!QUICK_PUZZLES) return null;
   const all = Object.values(QUICK_PUZZLES).flat();
@@ -1339,7 +1339,7 @@ function handleIncomingActions(g){
     document.getElementById('solveAttemptText').textContent=g.solveAttempt;
     const p=g.players?.[g.solveBy];
     document.getElementById('solvePlayerText').textContent=`Attempted by: ${p?.name||'?'}`;
-    document.getElementById('solveAutoCheck').textContent=autoMatch?'[ok] Auto-matched  --  looks correct!':'⚠ Does not exactly match  --  verify manually';
+    document.getElementById('solveAutoCheck').textContent=autoMatch?'[ok] Auto-matched  --  looks correct!':'[!] Does not exactly match  --  verify manually';
     document.getElementById('solveAutoCheck').style.color=autoMatch?'var(--green)':'var(--amber)';
     // Auto-judge if exact match
     if(autoMatch){setTimeout(()=>judgeSolve(true),800);}
@@ -1360,7 +1360,7 @@ async function processGuess(letter,playerId,g){
   const player=g.players?.[playerId];
   if(called[letter]!==undefined){
     setAnnounce(`${letter} already called!`,'Lose a turn  --  sip!');
-    addLog(`⚠ ${player?.name}: already-used ${letter}`);playWrong();
+    addLog(`[!] ${player?.name}: already-used ${letter}`);playWrong();
     await sendDrinkInternal('sip',playerId,'Already called! Take a sip  --  turn ends.');
     await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null,dingSignal:{ts:Date.now(),type:'wrong',count:1}});
     advanceTurn();return;
@@ -1392,8 +1392,8 @@ async function processGuess(letter,playerId,g){
     } else {
       setAnnounce(`${letter}! ${count} ${letter}${count>1?'s':''}! +${earned} pts`,`${player?.name} keeps control!`);
     }
-    addLog(`[ok] ${player?.name}: ${letter}×${count} +${earned} pts`);playDing(count);
-    showGR(true,`${letter} × ${count} = +${earned} pts`,isSpeedUp?`${player?.name}  --  now try to solve!`:`${player?.name} keeps control!`);
+    addLog(`[ok] ${player?.name}: ${letter}x${count} +${earned} pts`);playDing(count);
+    showGR(true,`${letter} x ${count} = +${earned} pts`,isSpeedUp?`${player?.name}  --  now try to solve!`:`${player?.name} keeps control!`);
     await update(ref(db,`games/${gameId}`),upd);
     if(isSpeedUp){
       // After speed-up hit, give player a brief solve window then host advances
@@ -1452,8 +1452,8 @@ async function processVowel(letter,playerId,g){
   if(hit){
     upd.dingSignal={ts:Date.now(),type:'ding',count};
     setAnnounce(`${letter}! ${count} ${letter}${count>1?'s':''}! (-50 pts)`,`${player?.name} keeps control!`);
-    addLog(`💰 ${player?.name} bought ${letter}×${count} (-50 pts)`);playDing(count);
-    showGR(true,`${letter}×${count} bought for 50 pts`,`${player?.name} keeps control!`);
+    addLog(`💰 ${player?.name} bought ${letter}x${count} (-50 pts)`);playDing(count);
+    showGR(true,`${letter}x${count} bought for 50 pts`,`${player?.name} keeps control!`);
     await update(ref(db,`games/${gameId}`),upd);
     checkAutoSolve(newRev,puzzle,playerId,g,upd[`players/${playerId}/roundScore`]);
   } else {
@@ -1484,7 +1484,7 @@ window.revealNextLetter=async function(){
 
 window.toggleAutoReveal=function(){
   autoRevealing=!autoRevealing;
-  document.getElementById('autoRevealBtn').textContent=autoRevealing?'⏸ Stop Auto':'> Auto-Reveal';
+  document.getElementById('autoRevealBtn').textContent=autoRevealing?'|| Stop Auto':'> Auto-Reveal';
   document.getElementById('autoRevealBtn').style.borderColor=autoRevealing?'var(--green)':'var(--border)';
   if(autoRevealing){scheduleAutoReveal();}else{clearTimeout(autoRevealTimer);document.getElementById('tossupTimerFill').style.width='100%';}
 };
@@ -1688,11 +1688,23 @@ async function advanceTurn(){
   });
   const pn=gameData.players?.[nextId]?.name||'?';
   setAnnounce(`${pn}'s turn!`,'Spin the wheel!');
-  addLog(`➡ ${pn}'s turn`);
+  addLog(`-> ${pn}'s turn`);
   startTimerDisplay(Date.now(),td);
 }
 
 // Auto-advance when timer expires (#1)
+
+function stopAllTimers() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  if (autoRevealTimer) { clearTimeout(autoRevealTimer); autoRevealTimer = null; }
+  if (bonusTimerInterval) { clearInterval(bonusTimerInterval); bonusTimerInterval = null; }
+  if (voteCountdownTimer) { clearInterval(voteCountdownTimer); voteCountdownTimer = null; }
+  const te = document.getElementById('bigTimer');
+  const bar = document.getElementById('hostTimerBar');
+  if (te) { te.textContent = '--'; te.className = 'big-timer'; }
+  if (bar) { bar.style.width = '100%'; bar.className = 'timer-bar'; }
+}
+
 function startTimerDisplay(start,dur){
   if(timerInterval)clearInterval(timerInterval);
   let autoAdvanced=false;
@@ -1707,11 +1719,12 @@ function startTimerDisplay(start,dur){
     bar.style.width=pct+'%';bar.className='timer-bar'+(pct<25?' warn':'');
     if(remaining<=0&&!autoAdvanced){
       autoAdvanced=true;clearInterval(timerInterval);timerInterval=null;
+      if(gameData?.roundSolved) return;
       // Fix 12: in free play mode skip auto-advance  --  host controls everything
       if(gameData?.status==='playing'&&gameData.roundType!=='tossup'&&!gameData.freePlay){
         const tid=gameData.currentTurnPlayerId;
         if(tid)sendDrinkInternal('sip',tid,'Time\'s up! Take a sip  --  turn passes.');
-        addLog(`⏰ Time up  --  auto-advancing turn`);
+        addLog(`[T] Time up  --  auto-advancing turn`);
         setAnnounce('Time\'s up!','Turn advances automatically.');
         setTimeout(()=>advanceTurn(),1200);
       }
@@ -1755,6 +1768,7 @@ function showLeaderboardSplash(g, roundJustEnded) {
 
 async function startNextRound(){
   if(!gameData)return;
+  stopAllTimers();
   stopAutoReveal();bonusExtraLetters=[];
   const currentRound=gameData.currentRound||1;
   const newRound=currentRound+1;
@@ -1795,7 +1809,7 @@ async function startNextRound(){
 window.revealAll = async function() {
   if (!gameData) return;
   const puzzle = (gameData.currentPuzzle || '').toUpperCase();
-  if (!puzzle) { addLog('⚠ No puzzle set  --  nothing to reveal'); return; }
+  if (!puzzle) { addLog('[!] No puzzle set  --  nothing to reveal'); return; }
   // Build a string of every unique letter in the puzzle
   const allLetters = [...new Set(puzzle.split('').filter(c => c !== ' '))].join('');
   // Mark all letters as called+hit in calledLetters
@@ -1807,8 +1821,8 @@ window.revealAll = async function() {
     roundSolved: true,
     dingSignal: { ts: Date.now(), type: 'ding', count: Math.min(allLetters.length, 5) }
   });
-  setAnnounce('✨ Full board revealed!', 'All letters are now showing  --  advance to next round when ready.');
-  addLog('✨ Host revealed full board');
+  setAnnounce('[?] Full board revealed!', 'All letters are now showing  --  advance to next round when ready.');
+  addLog('[?] Host revealed full board');
   playApplause();
 };
 
@@ -1834,7 +1848,7 @@ window.previewPuzzle = function(raw) {
     }).join('');
     return '<div style="display:flex;justify-content:center;gap:2px;">' + cells + '</div>';
   }).join('');
-  pmeta.textContent = words.length + ' words  -  ' + tiles + ' tiles  -  ' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + (overflow ? ' ⚠ TOO LONG' : ' (ok)');
+  pmeta.textContent = words.length + ' words  -  ' + tiles + ' tiles  -  ' + rows.length + ' row' + (rows.length !== 1 ? 's' : '') + (overflow ? ' [!] TOO LONG' : ' (ok)');
   pmeta.style.color = overflow ? 'var(--red)' : 'var(--green)';
 };
 
@@ -1970,12 +1984,12 @@ window.hostReconnect = async function() {
 };
 
 
-// ══════════════════════════════════════════════════════════
-//  QUICK PUZZLE SETUP — Minnesota-themed bank
-// ══════════════════════════════════════════════════════════
+// ==========================================================
+//  QUICK PUZZLE SETUP  --  Minnesota-themed bank
+// ==========================================================
 
 const QUICK_CATEGORIES = [
-  { id:'minnesota', icon:'🌨️', label:'Minnesota',      color:'#2980b9' },
+  { id:'minnesota', icon:'🌨', label:'Minnesota',      color:'#2980b9' },
   { id:'food',      icon:'🍔', label:'Food & Drink',   color:'#e67e22' },
   { id:'barlife',   icon:'🍺', label:'Bar Life',       color:'#c0392b' },
   { id:'music',     icon:'🎵', label:'Music',          color:'#8e44ad' },
@@ -1987,10 +2001,10 @@ const QUICK_CATEGORIES = [
   { id:'taglines',  icon:'🎬', label:'Movie Taglines', color:'#3498db' },
   { id:'oneliners', icon:'💥', label:'One Liners',     color:'#e74c3c' },
   { id:'cah',       icon:'🃏', label:'Cards Against',  color:'#2c3e50' },
-  { id:'manual',    icon:'✏️', label:'Manual Entry',   color:'#555577' },
+  { id:'manual',    icon:'[?]', label:'Manual Entry',   color:'#555577' },
 ];
 
-// ── PUZZLE BANK ── each entry: {p: puzzle text, c: WoF-style category shown to players, d: difficulty, src: source tile}
+// -- PUZZLE BANK -- each entry: {p: puzzle text, c: WoF-style category shown to players, d: difficulty, src: source tile}
 const QUICK_PUZZLES = {
 
   minnesota: [
@@ -2307,7 +2321,7 @@ const QUICK_PUZZLES = {
   ],
 };
 
-// ── Quick Setup UI Functions ──
+// -- Quick Setup UI Functions --
 let currentDiff = 'easy';
 let currentCat = null;
 let selectedPuzzle = null;
@@ -2552,7 +2566,7 @@ window.clearHistory = function() {
 setTimeout(renderHistory, 600);
 
 
-// ══ UNDO + RESTART ══════════════════════════════════════════
+// == UNDO + RESTART ==========================================
 let undoStack = []; // array of Firebase game state snapshots
 const UNDO_MAX = 5; // keep last 5 snapshots
 
@@ -2603,7 +2617,7 @@ window.undoLastAction = async function() {
   updates.jackpot = snap.state.jackpot;
 
   await update(ref(db, 'games/' + gameId), updates);
-  addLog('↩ Undid: ' + snap.label);
+  addLog('[?] Undid: ' + snap.label);
   showUndoToast('Undid: ' + snap.label);
 
   if (!undoStack.length) {
@@ -2615,7 +2629,7 @@ window.undoLastAction = async function() {
 function showUndoToast(msg) {
   const t = document.getElementById('undoToast');
   if (!t) return;
-  t.textContent = '↩ ' + msg;
+  t.textContent = '[?] ' + msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
@@ -2785,7 +2799,7 @@ function showGR(hit,main,sub){
 }
 
 // --- UTILITIES ---
-window.overrideScore=async function(id,val){const n=parseInt(val);if(isNaN(n))return;await update(ref(db,`games/${gameId}/players/${id}`),{totalScore:n});addLog(`✏ Score override: ${gameData?.players?.[id]?.name} -> ${n}`);};
+window.overrideScore=async function(id,val){const n=parseInt(val);if(isNaN(n))return;await update(ref(db,`games/${gameId}/players/${id}`),{totalScore:n});addLog(`[?] Score override: ${gameData?.players?.[id]?.name} -> ${n}`);};
 window.addJP=async function(amt){if(!gameData)return;await update(ref(db,`games/${gameId}`),{jackpot:Math.max(0,(gameData.jackpot||0)+amt)});};
 async function addJPInternal(amt){if(!gameData)return;await update(ref(db,`games/${gameId}`),{jackpot:Math.max(0,(gameData.jackpot||0)+amt)});}
 window.sendDrink=async function(type,target,desc){await sendDrinkInternal(type,target,desc);addLog(`🍹 Drink: ${type} -> ${target==='all'?'everyone':gameData?.players?.[target]?.name}`);};
@@ -2876,7 +2890,7 @@ function updateIpadScores() {
     <div class="ipad-btn-grid">
       <button class="btn btn-gold" onclick="nextTurn();closeIpadDrawer()">Next Turn ></button>
       <button class="btn btn-ghost" onclick="endRound();closeIpadDrawer()">End Round</button>
-      <button class="btn btn-ghost" onclick="revealAll();closeIpadDrawer()" style="border-color:rgba(245,197,24,.4);color:var(--gold);">✨ Reveal All</button>
+      <button class="btn btn-ghost" onclick="revealAll();closeIpadDrawer()" style="border-color:rgba(245,197,24,.4);color:var(--gold);">[?] Reveal All</button>
       <button class="btn btn-ghost" onclick="hostSpin();closeIpadDrawer()">🎡 Spin</button>
     </div>
   </div>
