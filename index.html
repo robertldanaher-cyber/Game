@@ -301,7 +301,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
     <div class="rejoin-title">👋 Welcome Back!</div>
     <div class="rejoin-sub" id="rejoinSub">The game is full. Are you one of these players?</div>
     <div id="rejoinPlayerList"></div>
-    <button class="rejoin-cancel" onclick="closeRejoinPicker()">Not me — cancel</button>
+    <button class="rejoin-cancel" onclick="closeRejoinPicker()">Not me  --  cancel</button>
   </div>
 </div>
 
@@ -500,11 +500,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 <!-- Category vote modal popup -->
 <div class="cat-vote-overlay" id="catVoteOverlay">
   <div class="cat-vote-modal">
-    <div class="cat-vote-title">🗳️ VOTE!</div>
+    <div class="cat-vote-title">🗳 VOTE!</div>
     <div class="cat-vote-sub" id="cvSub">Pick a category for the next round</div>
     <div class="cat-vote-opts" id="catVoteOpts"></div>
     <div class="cat-vote-done hidden" id="catVoteDone">
-      <div class="big">✅</div>
+      <div class="big">[ok]</div>
       <p id="cvDoneMsg">Vote submitted! Waiting for others...</p>
     </div>
     <div class="cat-vote-timer-bar"><div class="cat-vote-timer-fill" id="cvTimerFill" style="width:100%"></div></div>
@@ -820,7 +820,7 @@ function enterLobby(name){
   onValue(ref(db,'games/'+gameId),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
 }
 
-// ── Rejoin picker ──
+// -- Rejoin picker --
 let rejoinGameData=null;
 
 function showRejoinPicker(players,g,typedName){
@@ -1393,8 +1393,8 @@ function buildKB(g,mode){
       isMiss ? 'k-miss' : ''
     ].filter(Boolean).join(' ');
     // Show letter + small indicator: green dot for hit, red x for miss
-    const indicator = isHit ? '<span style="font-size:8px;display:block;line-height:1;margin-top:-2px;">✓</span>'
-                    : isMiss ? '<span style="font-size:8px;display:block;line-height:1;margin-top:-2px;">✗</span>'
+    const indicator = isHit ? '<span style="font-size:8px;display:block;line-height:1;margin-top:-2px;">&#10003;</span>'
+                    : isMiss ? '<span style="font-size:8px;display:block;line-height:1;margin-top:-2px;">&#10007;</span>'
                     : '';
     return '<button class="' + cls + '" ' + (used ? 'disabled' : '') +
       ' onclick="guessLetter('' + l + '')">' + l + indicator + '</button>';
@@ -1452,11 +1452,11 @@ const AH_PUZZLE_POOL = [
   {p:'KEEPING UP WITH THE KARDASHIANS',c:'TV Show',d:'hard'},
 ];
 
-// ══════════════════════════════════════════════════════════
+// ==========================================================
 //  AUTO HOST ENGINE
 //  When gameData.autoHost is true, the active player's device
 //  runs all game logic instead of a host device.
-// ══════════════════════════════════════════════════════════
+// ==========================================================
 
 // Wheel wedges -- must match host
 const AH_WEDGES = [
