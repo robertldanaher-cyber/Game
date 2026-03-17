@@ -676,11 +676,26 @@ document.addEventListener('click', iosAudioUnlock, { once: true });
 
 // Boot
 setTimeout(()=>{document.getElementById('connOverlay').style.display='none';document.getElementById('mainApp').style.display='flex';
-  // Auto-reconnect if session exists
+  // Auto-reconnect only if game is still active
   if(gameId&&myPlayerId&&myName){
-    document.getElementById('yourNameDisp').textContent=myName;
-    show('sLobby');
-    onValue(ref(db,`games/${gameId}`),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
+    get(ref(db,'games/'+gameId)).then(snap=>{
+      if(!snap.exists()||snap.val().status==='ended'){
+        // Game gone or ended -- clear session and show join screen
+        try{sessionStorage.clear();}catch(e){}
+        gameId=null;myPlayerId=null;myName=null;
+        show('sJoin');
+        return;
+      }
+      // Game is active -- reconnect
+      document.getElementById('yourNameDisp').textContent=myName;
+      show('sLobby');
+      onValue(ref(db,'games/'+gameId),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
+    }).catch(()=>{
+      // Firebase error -- just show join screen
+      show('sJoin');
+    });
+  } else {
+    show('sJoin');
   }
 },900);
 
@@ -696,13 +711,18 @@ document.getElementById('codeInp').addEventListener('input',function(){this.valu
       if (codeInp) {
         codeInp.value = urlCode;
         codeInp.style.borderColor = 'var(--green)';
-        codeInp.readOnly = true; // lock it -- came from a valid invite link
+        codeInp.readOnly = true;
         const note = document.getElementById('codeNote');
         if (note) note.style.display = 'block';
-        // Focus name field so player just types their name
         const nameInp = document.getElementById('nameInp');
         if (nameInp) setTimeout(() => nameInp.focus(), 300);
       }
+    }
+    // Pre-fill name from last session as a convenience hint (editable)
+    const savedName = sessionStorage.getItem('wom_name');
+    if (savedName) {
+      const nameInp = document.getElementById('nameInp');
+      if (nameInp && !nameInp.value) nameInp.value = savedName;
     }
   } catch(e) {}
 })();
@@ -714,6 +734,8 @@ window.joinGame=async function(){
   if(!name){toast('Enter your name!');return;}
   if(code.length!==4){toast('Enter the 4-letter code!');return;}
   document.getElementById('joinBtn').disabled=true;
+  // Reset player identity -- fresh join
+  myPlayerId=null;mySlot=null;
   gameId=code;myName=name;
   const snap=await get(ref(db,'games/'+gameId));
   if(!snap.exists()){toast('Game not found!');document.getElementById('joinBtn').disabled=false;gameId=null;return;}
