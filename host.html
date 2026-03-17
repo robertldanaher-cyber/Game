@@ -292,6 +292,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
         <span style="font-size:11px;color:var(--muted);">No rounds or auto-timer</span>
       </div>
     </div>
+    <div class="form-row" style="margin-top:4px;">
+      <label style="color:var(--gold);font-weight:800;">Auto Host mode</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="sAutoHost" style="width:16px;height:16px;accent-color:var(--gold);" onchange="document.getElementById('autoHostNote').style.display=this.checked?'block':'none'">
+        <span style="font-size:11px;color:var(--muted);">No host device needed -- runs on players' phones</span>
+      </div>
+    </div>
+    <div id="autoHostNote" style="display:none;background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.2);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:11px;color:var(--muted);line-height:1.6;">
+      <strong style="color:var(--gold);">Auto Host:</strong> Puzzles picked automatically from the bank. Active player spins and guesses from their phone. No host device required after game launches.
+    </div>
     <button class="btn btn-gold btn-full" style="margin-top:6px" onclick="createGame()">CREATE GAME</button>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
       <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Rejoin Existing Game</div>
@@ -1073,6 +1083,34 @@ async function handleSpinResult(wedge){
 }
 
 // --- CREATE GAME ---
+
+// ── AUTO HOST: pick random puzzle from bank ──
+function pickAutoHostPuzzle(roundNum) {
+  if (!QUICK_PUZZLES) return null;
+  const all = Object.values(QUICK_PUZZLES).flat();
+  if (!all.length) return null;
+  // Vary difficulty by round: rounds 1-2=easy, 3-4=medium, 5+=hard
+  const diff = roundNum <= 2 ? 'easy' : roundNum <= 4 ? 'medium' : 'hard';
+  const pool = all.filter(p => p.d === diff);
+  const src = pool.length > 0 ? pool : all;
+  return src[Math.floor(Math.random() * src.length)];
+}
+
+// Track used auto puzzles to avoid repeats
+let usedAutoPuzzles = new Set();
+
+function pickFreshPuzzle(roundNum) {
+  if (!QUICK_PUZZLES) return null;
+  const all = Object.values(QUICK_PUZZLES).flat();
+  const diff = roundNum <= 2 ? 'easy' : roundNum <= 4 ? 'medium' : 'hard';
+  const pool = all.filter(p => p.d === diff && !usedAutoPuzzles.has(p.p));
+  const src = pool.length > 0 ? pool : all.filter(p => !usedAutoPuzzles.has(p.p));
+  const fallback = all;
+  const chosen = (src.length > 0 ? src : fallback)[Math.floor(Math.random() * (src.length || fallback.length))];
+  if (chosen) usedAutoPuzzles.add(chosen.p);
+  return chosen;
+}
+
 window.createGame=async function(){
   if(!db){alert('Firebase not connected. Check your firebase-config.js credentials and try again.');return;}
   ac(); // unlock audio context
@@ -1083,9 +1121,12 @@ window.createGame=async function(){
   const turnDuration=parseInt(document.getElementById('sTimer').value);
   const ante=parseInt(document.getElementById('sAnte').value);
   const freePlay = document.getElementById('sFreePlay')?.checked || false;
+  const autoHost = document.getElementById('sAutoHost')?.checked || false;
+  // Auto host: pick a random puzzle from the bank for each round
+  const autoHostPuzzle = autoHost ? pickAutoHostPuzzle(1) : null;
   await set(ref(db,`games/${gameId}`),{
     status:'lobby',maxPlayers,totalRounds:freePlay?999:totalRounds,
-    turnDuration:freePlay?0:turnDuration,ante,jackpot:ante,freePlay,
+    turnDuration:freePlay?0:turnDuration,ante,jackpot:ante,freePlay,autoHost,
     currentRound:1,roundType:'standard',players:{},
     currentTurnPlayerId:null,turnPhase:'spin',turnOrder:[],currentTurnIndex:0,
     calledLetters:{},revealedLetters:'',currentPuzzle:'',currentCategory:'',
@@ -1104,8 +1145,17 @@ window.createGame=async function(){
   document.getElementById('endGamePanel').style.display='block';
   try{sessionStorage.setItem('wom_host_gameId',gameId);}catch(e){} // iOS private
   subscribeGame();
-  addLog(`🎮 Game ${gameId} created`);
-  setAnnounce('Welcome to Wheel of Misfortune!',`Share code ${gameId}  --  players open index.html to join`);
+  addLog('🎮 Game ' + gameId + ' created' + (autoHost ? ' [AUTO HOST]' : ''));
+  if (autoHost && autoHostPuzzle) {
+    await update(ref(db,'games/'+gameId), {
+      currentPuzzle: autoHostPuzzle.p,
+      currentCategory: autoHostPuzzle.c,
+    });
+    setAnnounce('Auto Host Ready!', 'Puzzle loaded -- launch when players join!');
+    addLog('🤖 Auto puzzle: ' + autoHostPuzzle.p + ' (' + autoHostPuzzle.c + ')');
+  } else {
+    setAnnounce('Welcome to Wheel of Misfortune!', 'Share code ' + gameId + '  --  players open index.html to join');
+  }
 };
 
 function subscribeGame(){
@@ -1625,11 +1675,23 @@ async function startNextRound(){
   await update(ref(db,`games/${gameId}`),{leaderboardSplash:{round:currentRound,ts:Date.now()}});
   // Auto-start category vote after splash (5.5s delay)
   setTimeout(async()=>{
-    await update(ref(db,`games/${gameId}`),{currentRound:newRound,roundSolved:false,calledLetters:{},revealedLetters:'',currentPuzzle:'',currentCategory:''});
-    setAnnounce('Round ' + newRound + '!','Host -- enter the next puzzle and click Set Puzzle.');
-    addLog('🔄 Round ' + newRound + ' starting');
-    // Auto-trigger category vote
-    setTimeout(()=>startCategoryVote(), 800);
+    if (gameData.autoHost) {
+      // Auto Host: pick next puzzle automatically
+      const nextPuzzle = pickFreshPuzzle(newRound);
+      await update(ref(db,`games/${gameId}`),{
+        currentRound:newRound,roundSolved:false,calledLetters:{},revealedLetters:'',
+        currentPuzzle:nextPuzzle?nextPuzzle.p:'',
+        currentCategory:nextPuzzle?nextPuzzle.c:'',
+      });
+      setAnnounce('Round ' + newRound + '!', nextPuzzle ? 'Category: ' + nextPuzzle.c : 'Auto Host loading...');
+      addLog('🤖 Auto puzzle R' + newRound + ': ' + (nextPuzzle?nextPuzzle.p:'?') + ' (' + (nextPuzzle?nextPuzzle.c:'?') + ')');
+    } else {
+      await update(ref(db,`games/${gameId}`),{currentRound:newRound,roundSolved:false,calledLetters:{},revealedLetters:'',currentPuzzle:'',currentCategory:''});
+      setAnnounce('Round ' + newRound + '!','Host -- enter the next puzzle and click Set Puzzle.');
+      addLog('🔄 Round ' + newRound + ' starting');
+      // Auto-trigger category vote
+      setTimeout(()=>startCategoryVote(), 800);
+    }
   },5500);
 }
 
