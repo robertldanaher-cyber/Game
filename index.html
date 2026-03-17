@@ -101,11 +101,15 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .ul-tile.unused{color:var(--muted);}
 
 /* Fix 10: spin animation on player phones */
-.spin-wheel-wrap{width:100%;max-width:460px;display:none;flex-direction:column;align-items:center;margin-bottom:8px;}
+/* Spin wheel -- fullscreen overlay, board stays visible underneath */
+.spin-wheel-wrap{position:fixed;inset:0;z-index:350;background:rgba(7,7,20,.93);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;animation:wfadeIn .2s ease;}
 .spin-wheel-wrap.show{display:flex;}
-.spin-wheel-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-#playerWheelCanvas{width:200px;height:200px;border-radius:50%;}
-.spin-wheel-ptr{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:17px solid var(--gold);margin-bottom:6px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+@keyframes wfadeIn{from{opacity:0}to{opacity:1}}
+.spin-wheel-label{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:5px;color:var(--gold);margin-bottom:10px;text-shadow:0 0 24px rgba(245,197,24,.5);}
+.spin-wheel-spinner-name{font-size:14px;color:var(--muted);margin-bottom:14px;text-align:center;}
+#playerWheelCanvas{width:260px;height:260px;border-radius:50%;box-shadow:0 0 40px rgba(245,197,24,.12);}
+.spin-wheel-ptr{width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--gold);margin-bottom:10px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));}
+.spin-wheel-dismiss{font-size:12px;color:var(--muted);margin-top:16px;letter-spacing:1px;}
 
 /* Round / jackpot banner */
 .rnd-banner{display:flex;align-items:center;justify-content:space-between;background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.15);border-radius:9px;padding:7px 12px;margin-bottom:8px;width:100%;max-width:460px;}
@@ -348,11 +352,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   <!-- GAME -->
   <div id="sGame" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
     <div class="logo" style="font-size:22px;margin-top:6px;margin-bottom:4px;">🎡 WHEEL OF MISFORTUNE</div>
-    <!-- Fix 10: mini spin wheel -->
-    <div class="spin-wheel-wrap" id="spinWheelWrap">
-      <div class="spin-wheel-label">🎡 Spinning...</div>
+    <!-- Spin wheel overlay -- shows during spin, board always visible behind -->
+    <div class="spin-wheel-wrap" id="spinWheelWrap" onclick="document.getElementById('spinWheelWrap').classList.remove('show')">
+      <div class="spin-wheel-label">🎡 SPINNING!</div>
+      <div class="spin-wheel-spinner-name" id="spinnerName"></div>
       <div class="spin-wheel-ptr"></div>
       <canvas id="playerWheelCanvas" width="400" height="400"></canvas>
+      <div class="spin-wheel-dismiss">Tap to dismiss</div>
     </div>
 
 
@@ -858,7 +864,7 @@ function drawPlayerWheel(angle) {
   if (!canvas._dprSet) {
     const size = 400;
     canvas.width = size * dpr; canvas.height = size * dpr;
-    canvas.style.width = '200px'; canvas.style.height = '200px';
+    canvas.style.width = '260px'; canvas.style.height = '260px';
     ctx.scale(dpr, dpr);
     canvas._dprSet = true;
   }
@@ -882,8 +888,10 @@ function drawPlayerWheel(angle) {
   ctx.fillText('WOM', cx, cy + 4);
 }
 
-function startPlayerSpin(durationMs) {
+function startPlayerSpin(durationMs, spinnerName) {
   pWheelSpinning = true;
+  const nameEl = document.getElementById('spinnerName');
+  if (nameEl) nameEl.textContent = spinnerName ? spinnerName + ' is spinning...' : '';
   document.getElementById('spinWheelWrap').classList.add('show');
   const extraSpins = Math.floor(Math.random() * 6) + 8;
   const target = Math.random() * Math.PI * 2;
@@ -911,14 +919,20 @@ function checkSpinSignal(g) {
   const sig = g.spinSignal;
   if (!sig || sig.ts === lastSpinSignalTs) return;
   lastSpinSignalTs = sig.ts;
-  if (!pWheelSpinning) startPlayerSpin(sig.duration || 5000);
+  if (!pWheelSpinning) {
+    // Get current spinner name
+    const players = g.players || {};
+    const spinner = players[g.currentTurnPlayerId];
+    const name = spinner ? spinner.name : '';
+    startPlayerSpin(sig.duration || 5000, name);
+  }
 }
 
 
 // --- FIX 11: CATEGORY VOTE (player side) ---
 let myVoteIdx = null;
 let catVoteActive = false;
-let catVoteTs = 0;
+let catVoteTs = -1;
 
 function checkCategoryVote(g) {
   const cv = g.categoryVote;
@@ -933,8 +947,9 @@ function checkCategoryVote(g) {
     return;
   }
 
-  // New vote session -- open modal and reset
-  if (cv.ts !== catVoteTs) {
+  // Show modal whenever vote is active -- re-render if new session
+  const isNewSession = cv.ts !== catVoteTs;
+  if (isNewSession) {
     catVoteTs = cv.ts;
     myVoteIdx = null;
     catVoteActive = true;
@@ -943,15 +958,16 @@ function checkCategoryVote(g) {
     if (doneEl) doneEl.classList.add('hidden');
     if (optsEl) { optsEl.style.display = 'flex'; optsEl.innerHTML = ''; }
     renderVoteOptions(cv.options);
-    // Reset timer bar
     const fill = document.getElementById('cvTimerFill');
     if (fill) { fill.style.transition = 'none'; fill.style.width = '100%'; }
     setTimeout(() => {
       if (fill) { fill.style.transition = 'width 30s linear'; fill.style.width = '0%'; }
     }, 50);
-    overlay.classList.add('show');
-    // Buzz sound to alert player
     try { playBuzz(); } catch(e) {}
+  }
+  // Always ensure overlay is visible when vote is active
+  if (!overlay.classList.contains('show')) {
+    overlay.classList.add('show');
   }
 
   // Update countdown
