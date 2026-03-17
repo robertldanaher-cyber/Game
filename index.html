@@ -823,6 +823,7 @@ function handleState(g){
   checkLeaderboardSplash(g); // Fix 7
   checkSpinSignal(g); // Fix 10
   checkCategoryVote(g); // Fix 11
+  checkAutoHostRoundAdvance(g); // Auto Host
   if(g.status==='lobby'){show('sLobby');}
   else if(g.status==='playing'){show('sGame');renderGame(g);}
   else if(g.status==='ended'){show('sWinner');renderWinner(g);}
@@ -1012,11 +1013,78 @@ window.submitCatVote = async function(voteIdx) {
 function updateFreePlayBadge(g) {
   const rndLabel = document.getElementById('rndLabel');
   if (!rndLabel) return;
-  if (g.freePlay) {
-    rndLabel.innerHTML = `ROUND ${g.currentRound || 1} <span class="fp-badge">FREE PLAY</span>`;
+  if (g.autoHost) {
+    rndLabel.innerHTML = 'ROUND ' + (g.currentRound || 1) + ' <span class="fp-badge" style="background:rgba(39,174,96,.12);border-color:rgba(39,174,96,.3);color:var(--green);">AUTO HOST</span>';
+  } else if (g.freePlay) {
+    rndLabel.innerHTML = 'ROUND ' + (g.currentRound || 1) + ' <span class="fp-badge">FREE PLAY</span>';
   } else {
-    rndLabel.textContent = `ROUND ${g.currentRound || 1}`;
+    rndLabel.textContent = 'ROUND ' + (g.currentRound || 1);
   }
+}
+
+
+// Auto Host: next round trigger -- active player (first in order) handles round advancement
+let ahLastRoundSolved = false;
+function checkAutoHostRoundAdvance(g) {
+  if (!g.autoHost) return;
+  if (!g.roundSolved) { ahLastRoundSolved = false; return; }
+  if (ahLastRoundSolved) return; // already handled
+  // Only the first player in turn order handles advancement (avoids race condition)
+  const order = g.turnOrder || [];
+  if (!order.length || order[0] !== myPlayerId) return;
+  ahLastRoundSolved = true;
+  // Wait for leaderboard splash (6s) then advance
+  setTimeout(() => ahStartNextRound(g), 6500);
+}
+
+async function ahStartNextRound(g) {
+  if (!g.autoHost || !gameId) return;
+  const currentRound = g.currentRound || 1;
+  const newRound = currentRound + 1;
+  if (!g.freePlay && newRound > (g.totalRounds || 3)) {
+    // End game
+    const players = g.players || {};
+    const u = {};
+    Object.entries(players).forEach(([id, p]) => {
+      u['players/' + id + '/totalScore'] = (p.totalScore || 0) + (p.roundScore || 0);
+      u['players/' + id + '/roundScore'] = 0;
+    });
+    u.status = 'ended';
+    await update(ref(db, 'games/' + gameId), u);
+    return;
+  }
+  // Pick next puzzle
+  // We need QUICK_PUZZLES -- but that's on host.html not index.html
+  // Solution: encode a small puzzle set inline for auto host
+  const pool = AH_PUZZLE_POOL;
+  const used = g.usedAHPuzzles || [];
+  const fresh = pool.filter(p => !used.includes(p.p));
+  const src = fresh.length > 0 ? fresh : pool;
+  const diff = newRound <= 2 ? 'easy' : newRound <= 4 ? 'medium' : 'hard';
+  const byDiff = src.filter(p => p.d === diff);
+  const chosen = (byDiff.length > 0 ? byDiff : src)[Math.floor(Math.random() * (byDiff.length || src.length))];
+
+  const players = g.players || {};
+  const u = {};
+  Object.entries(players).forEach(([id, p]) => {
+    u['players/' + id + '/totalScore'] = (p.totalScore || 0) + (p.roundScore || 0);
+    u['players/' + id + '/roundScore'] = 0;
+  });
+  u.currentRound = newRound;
+  u.roundSolved = false;
+  u.calledLetters = {};
+  u.revealedLetters = '';
+  u.currentPuzzle = chosen ? chosen.p : '';
+  u.currentCategory = chosen ? chosen.c : '';
+  u.usedAHPuzzles = [...used, chosen ? chosen.p : ''];
+  u.leaderboardSplash = null;
+  // Reset turn to first player
+  const order = g.turnOrder || [];
+  u.currentTurnPlayerId = order[0] || null;
+  u.currentTurnIndex = 0;
+  u.turnPhase = 'spin';
+  u.currentSpinValue = null;
+  await update(ref(db, 'games/' + gameId), u);
 }
 
 // --- RENDER GAME ---
@@ -1191,25 +1259,307 @@ function renderTimer(g){
 }
 
 // --- PLAYER ACTIONS ---
-window.requestSpin=async function(){getACtx();await update(ref(db,`games/${gameId}`),{spinRequested:serverTimestamp(),spinRequestBy:myPlayerId});};
-window.startBuyVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'buy_vowel'});};
+
+
+// Auto Host puzzle pool -- embedded in index.html for offline/no-host play
+const AH_PUZZLE_POOL = [
+  {p:'LAST CALL',c:'Phrase',d:'easy'},{p:'OPEN BAR',c:'Thing',d:'easy'},
+  {p:'MINNEAPOLIS',c:'Place',d:'easy'},{p:'PURPLE RAIN',c:'Song Title',d:'easy'},
+  {p:'HOTEL CALIFORNIA',c:'Song Title',d:'easy'},{p:'PIANO MAN',c:'Song Title',d:'easy'},
+  {p:'MINNESOTA NICE',c:'Phrase',d:'easy'},{p:'SHOTS SHOTS SHOTS',c:'Phrase',d:'easy'},
+  {p:'CLOSING TIME',c:'Phrase',d:'easy'},{p:'KARAOKE NIGHT',c:'Event',d:'easy'},
+  {p:'GO AHEAD MAKE MY DAY',c:'Movie Quote',d:'easy'},{p:'ILL BE BACK',c:'Movie Quote',d:'easy'},
+  {p:'IN DA CLUB',c:'Song Title',d:'easy'},{p:'LOSE YOURSELF',c:'Song Title',d:'easy'},
+  {p:'CALIFORNIA LOVE',c:'Song Title',d:'easy'},{p:'JUCY LUCY',c:'Food & Drink',d:'easy'},
+  {p:'LAKE MINNETONKA',c:'Place',d:'easy'},{p:'MINNESOTA VIKINGS',c:'Pro Football Team',d:'easy'},
+  {p:'DUMPSTER FIRE',c:'Thing',d:'easy'},{p:'THIS IS FINE',c:'Phrase',d:'easy'},
+  {p:'DESIGNATED DRIVER',c:'Person',d:'medium'},{p:'LIQUID COURAGE',c:'Thing',d:'medium'},
+  {p:'WALK OF SHAME',c:'What Are You Doing?',d:'medium'},{p:'NEVER HAVE I EVER',c:'What Are You Doing?',d:'medium'},
+  {p:'LAND OF TEN THOUSAND LAKES',c:'Phrase',d:'medium'},{p:'YA SURE YOU BETCHA',c:'Phrase',d:'medium'},
+  {p:'WHEN DOVES CRY',c:'Song Title',d:'medium'},{p:'RASPBERRY BERET',c:'Song Title',d:'medium'},
+  {p:'SHOOK ONES PART TWO',c:'Song Title',d:'medium'},{p:'THE REAL SLIM SHADY',c:'Song Title',d:'medium'},
+  {p:'IT WAS ALL A DREAM',c:'Lyric',d:'medium'},{p:'FEAR CAN HOLD YOU PRISONER HOPE CAN SET YOU FREE',c:'Movie Tagline',d:'medium'},
+  {p:'SHOW ME THE MONEY',c:'Movie Quote',d:'medium'},{p:'JUST KEEP SWIMMING',c:'Movie Quote',d:'medium'},
+  {p:'BLACKED OUT AND BOUGHT A BOAT',c:'What Are You Doing?',d:'medium'},
+  {p:'MY THERAPIST QUIT',c:'Phrase',d:'medium'},{p:'KIRBY PUCKETT',c:'Person',d:'medium'},
+  {p:'WEARING CROCS WITH SOCKS',c:'What Are You Doing?',d:'medium'},
+  {p:'WOKE UP IN A DIFFERENT AREA CODE',c:'What Are You Doing?',d:'hard'},
+  {p:'FRANKLY MY DEAR I DONT GIVE A DAMN',c:'Movie Quote',d:'hard'},
+  {p:'ALL THOSE MOMENTS WILL BE LOST IN TIME LIKE TEARS IN RAIN',c:'Movie Quote',d:'hard'},
+  {p:'NOT MY CIRCUS NOT MY MONKEYS BUT HERE I AM',c:'Phrase',d:'hard'},
+  {p:'I HAVE MADE A SERIES OF SMALL MISTAKES',c:'Phrase',d:'hard'},
+  {p:'TECHNICALLY IT IS NOT ILLEGAL',c:'Phrase',d:'hard'},
+  {p:'ACCIDENTALLY WALKING IN ON YOUR PARENTS',c:'What Are You Doing?',d:'hard'},
+  {p:'TEXTING WHILE DRIVING INTO A CROWD OF CHILDREN',c:'What Are You Doing?',d:'hard'},
+  {p:'THE BOUNDARY WATERS CANOE AREA',c:'Place',d:'hard'},
+  {p:'AQUEMINI',c:'Song Title',d:'hard'},
+  {p:'GET BUSY LIVING OR GET BUSY DYING',c:'Movie Quote',d:'hard'},
+  {p:'KEEPING UP WITH THE KARDASHIANS',c:'TV Show',d:'hard'},
+];
+
+// ══════════════════════════════════════════════════════════
+//  AUTO HOST ENGINE
+//  When gameData.autoHost is true, the active player's device
+//  runs all game logic instead of a host device.
+// ══════════════════════════════════════════════════════════
+
+// Wheel wedges -- must match host
+const AH_WEDGES = [
+  {l:'300',v:300},{l:'450',v:450},{l:'BANKRUPT',v:'bankrupt'},
+  {l:'500',v:500},{l:'SIP',v:'sip'},{l:'350',v:350},
+  {l:'200',v:200},{l:'LOSE TURN',v:'loseaturn'},{l:'400',v:400},
+  {l:'CHUG',v:'chug'},{l:'250',v:250},{l:'500',v:500},
+  {l:'WILDCARD',v:'wildcard'},{l:'BANKRUPT',v:'bankrupt'},{l:'150',v:150},
+  {l:'400',v:400},{l:'SIP',v:'sip'},{l:'300',v:300},
+  {l:'SHOT',v:'shot'},{l:'450',v:450},{l:'200',v:200},
+  {l:'CHUG',v:'chug'},{l:'350',v:350},{l:'500',v:500},
+];
+
+function ahSpin() {
+  return AH_WEDGES[Math.floor(Math.random() * AH_WEDGES.length)];
+}
+
+function ahGetPlayers() { return gameData?.players || {}; }
+function ahGetPuzzle() { return (gameData?.currentPuzzle || '').toUpperCase(); }
+function ahGetRevealed() { return (gameData?.revealedLetters || '').toUpperCase(); }
+function ahGetCalled() { return gameData?.calledLetters || {}; }
+function ahMyScore() { return gameData?.players?.[myPlayerId]?.roundScore || 0; }
+
+async function ahAdvanceTurn() {
+  const order = gameData?.turnOrder || [];
+  if (!order.length) return;
+  const idx = ((gameData?.currentTurnIndex || 0) + 1) % order.length;
+  await update(ref(db, 'games/' + gameId), {
+    currentTurnPlayerId: order[idx],
+    currentTurnIndex: idx,
+    turnPhase: 'spin',
+    currentSpinValue: null,
+    guessedLetter: null,
+  });
+}
+
+async function ahSendDrink(type, targetId, msg) {
+  const signals = {};
+  const targets = targetId === 'all'
+    ? Object.keys(ahGetPlayers())
+    : [targetId];
+  targets.forEach(id => { signals['drinkSignal_' + id] = { type, msg, ts: Date.now() }; });
+  await update(ref(db, 'games/' + gameId), signals);
+}
+
+async function ahApplySpin(wedge) {
+  const v = wedge.v;
+  const u = {};
+  u['spinSignal'] = { ts: Date.now(), duration: 4500 };
+
+  if (typeof v === 'number') {
+    u['currentSpinValue'] = v;
+    u['turnPhase'] = 'guess_consonant';
+    await update(ref(db, 'games/' + gameId), u);
+  } else if (v === 'bankrupt') {
+    u['players/' + myPlayerId + '/roundScore'] = 0;
+    u['turnPhase'] = 'spin';
+    u['currentSpinValue'] = null;
+    u['jackpot'] = (gameData?.jackpot || 0) + 1;
+    u['dingSignal'] = { ts: Date.now(), type: 'bankrupt', count: 1 };
+    await update(ref(db, 'games/' + gameId), u);
+    await ahSendDrink('chug', myPlayerId, 'BANKRUPT! Chug!');
+    setTimeout(() => ahAdvanceTurn(), 2000);
+  } else if (v === 'loseaturn') {
+    u['turnPhase'] = 'spin';
+    u['currentSpinValue'] = null;
+    u['dingSignal'] = { ts: Date.now(), type: 'wrong', count: 1 };
+    await update(ref(db, 'games/' + gameId), u);
+    await ahSendDrink('sip', myPlayerId, 'Lose a Turn -- sip!');
+    setTimeout(() => ahAdvanceTurn(), 1800);
+  } else if (v === 'sip') {
+    u['currentSpinValue'] = 250;
+    u['turnPhase'] = 'guess_consonant';
+    u['dingSignal'] = { ts: Date.now(), type: 'ding', count: 1 };
+    await update(ref(db, 'games/' + gameId), u);
+    await ahSendDrink('sip', myPlayerId, 'SIP -- then guess a consonant!');
+  } else if (v === 'chug') {
+    u['turnPhase'] = 'spin';
+    u['currentSpinValue'] = null;
+    u['jackpot'] = (gameData?.jackpot || 0) + 1;
+    u['dingSignal'] = { ts: Date.now(), type: 'wrong', count: 1 };
+    await update(ref(db, 'games/' + gameId), u);
+    await ahSendDrink('chug', myPlayerId, 'CHUG!');
+    setTimeout(() => ahAdvanceTurn(), 2000);
+  } else if (v === 'shot') {
+    u['turnPhase'] = 'spin';
+    u['currentSpinValue'] = null;
+    u['jackpot'] = (gameData?.jackpot || 0) + 1;
+    u['dingSignal'] = { ts: Date.now(), type: 'wrong', count: 1 };
+    await update(ref(db, 'games/' + gameId), u);
+    await ahSendDrink('shot', myPlayerId, 'TAKE A SHOT!');
+    setTimeout(() => ahAdvanceTurn(), 2000);
+  } else if (v === 'wildcard') {
+    u['currentSpinValue'] = null;
+    u['turnPhase'] = 'spin';
+    u['players/' + myPlayerId + '/wildcard'] = true;
+    u['dingSignal'] = { ts: Date.now(), type: 'ding', count: 1 };
+    await update(ref(db, 'games/' + gameId), u);
+    toast('🃏 Wildcard! Free consonant anytime!');
+  }
+}
+
+async function ahApplyGuess(letter) {
+  const puzzle = ahGetPuzzle();
+  const called = ahGetCalled();
+  const revealed = ahGetRevealed();
+  const spinVal = gameData?.currentSpinValue || 250;
+
+  // Validate
+  if (['A','E','I','O','U'].includes(letter)) {
+    toast('That is a vowel -- use Buy Vowel!'); return;
+  }
+  if (called[letter]) {
+    toast(letter + ' already called -- sip!');
+    await ahSendDrink('sip', myPlayerId, letter + ' already called!');
+    await update(ref(db, 'games/' + gameId), {
+      turnPhase: 'spin', currentSpinValue: null,
+      dingSignal: { ts: Date.now(), type: 'wrong', count: 1 }
+    });
+    setTimeout(() => ahAdvanceTurn(), 1500);
+    return;
+  }
+
+  // Count occurrences
+  const count = puzzle.split('').filter(c => c === letter).length;
+  const newCalled = {};
+  newCalled['calledLetters/' + letter] = count > 0;
+
+  if (count > 0) {
+    // Hit
+    const earned = spinVal * count;
+    const newRev = revealed + letter;
+    newCalled['revealedLetters'] = newRev;
+    newCalled['players/' + myPlayerId + '/roundScore'] = ahMyScore() + earned;
+    newCalled['turnPhase'] = 'spin';
+    newCalled['currentSpinValue'] = null;
+    newCalled['dingSignal'] = { ts: Date.now(), type: 'ding', count };
+    await update(ref(db, 'games/' + gameId), newCalled);
+    // Check if board fully solved
+    const allLetters = puzzle.replace(/[^A-Z]/g, '');
+    const uniqueLetters = [...new Set(allLetters.split(''))];
+    const allRevealed = uniqueLetters.every(c => ['A','E','I','O','U'].includes(c) || newRev.includes(c));
+    if (allRevealed) setTimeout(() => ahHandleSolve(myPlayerId), 500);
+  } else {
+    // Miss
+    newCalled['turnPhase'] = 'spin';
+    newCalled['currentSpinValue'] = null;
+    newCalled['dingSignal'] = { ts: Date.now(), type: 'wrong', count: 1 };
+    await update(ref(db, 'games/' + gameId), newCalled);
+    await ahSendDrink('sip', myPlayerId, 'No ' + letter + 's -- sip!');
+    setTimeout(() => ahAdvanceTurn(), 1500);
+  }
+}
+
+async function ahApplyVowel(letter) {
+  const puzzle = ahGetPuzzle();
+  const called = ahGetCalled();
+  const revealed = ahGetRevealed();
+  const score = ahMyScore();
+
+  if (score < 50) { toast('Not enough points!'); return; }
+  if (called[letter]) { toast(letter + ' already revealed!'); return; }
+
+  const count = puzzle.split('').filter(c => c === letter).length;
+  const newCalled = {};
+  newCalled['calledLetters/' + letter] = count > 0;
+  newCalled['players/' + myPlayerId + '/roundScore'] = score - 50;
+
+  if (count > 0) {
+    const newRev = revealed + letter;
+    newCalled['revealedLetters'] = newRev;
+    newCalled['turnPhase'] = 'spin';
+    newCalled['currentSpinValue'] = null;
+    newCalled['dingSignal'] = { ts: Date.now(), type: 'ding', count };
+    await update(ref(db, 'games/' + gameId), newCalled);
+  } else {
+    newCalled['turnPhase'] = 'spin';
+    newCalled['currentSpinValue'] = null;
+    newCalled['dingSignal'] = { ts: Date.now(), type: 'wrong', count: 1 };
+    await update(ref(db, 'games/' + gameId), newCalled);
+    await ahSendDrink('sip', myPlayerId, 'No ' + letter + 's -- sip!');
+    setTimeout(() => ahAdvanceTurn(), 1500);
+  }
+}
+
+async function ahCheckSolve(attempt) {
+  const puzzle = ahGetPuzzle();
+  const clean = s => s.toUpperCase().replace(/[^A-Z]/g, '');
+  if (clean(attempt) === clean(puzzle)) {
+    await ahHandleSolve(myPlayerId);
+  } else {
+    await update(ref(db, 'games/' + gameId), {
+      solveResult: { correct: false, name: gameData?.players?.[myPlayerId]?.name || '?', ts: Date.now() },
+      turnPhase: 'spin', currentSpinValue: null,
+    });
+    await ahSendDrink('sip', myPlayerId, 'Wrong solve -- sip!');
+    setTimeout(() => ahAdvanceTurn(), 1500);
+  }
+}
+
+async function ahHandleSolve(winnerId) {
+  const players = ahGetPlayers();
+  const winner = players[winnerId];
+  const roundScore = winner?.roundScore || 0;
+  const u = {};
+  u['players/' + winnerId + '/totalScore'] = (winner?.totalScore || 0) + roundScore;
+  u['players/' + winnerId + '/roundScore'] = 0;
+  // Everyone else sips
+  Object.keys(players).forEach(id => {
+    if (id !== winnerId) u['drinkSignal_' + id] = { type: 'sip', msg: (winner?.name || '?') + ' solved it -- sip!', ts: Date.now() };
+  });
+  u['roundSolved'] = true;
+  u['solveResult'] = { correct: true, name: winner?.name || '?', score: roundScore, ts: Date.now() };
+  u['dingSignal'] = { ts: Date.now(), type: 'applause', count: 1 };
+  u['leaderboardSplash'] = { round: gameData?.currentRound || 1, ts: Date.now() };
+  await update(ref(db, 'games/' + gameId), u);
+}
+
+window.requestSpin=async function(){
+  getACtx();
+  if (gameData?.autoHost && gameData.currentTurnPlayerId === myPlayerId) {
+    // Auto Host: spin locally and apply result directly
+    const wedge = ahSpin();
+    await ahApplySpin(wedge);
+    return;
+  }
+  // Normal mode: request spin from host
+  await update(ref(db,'games/'+gameId),{spinRequested:serverTimestamp(),spinRequestBy:myPlayerId});
+};
+window.startBuyVowel=async function(){await update(ref(db,'games/'+gameId),{turnPhase:'buy_vowel'});};
 window.cancelVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null});};
 window.startSolve=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'solve'});setTimeout(()=>document.getElementById('solveInp').focus(),100);};
 window.cancelSolve=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'spin'});};
 window.guessLetter=async function(l){
-  // Fix 2: block vowels in consonant-guess phase regardless of how we got here
   const phase=gameData?.turnPhase;
   if(phase==='guess_consonant' && ['A','E','I','O','U'].includes(l)){
-    toast('That\'s a vowel! Buy it with the Vowel button.');
+    toast('That is a vowel! Buy it with the Vowel button.');
     return;
   }
-  await update(ref(db,`games/${gameId}`),{guessedLetter:l,guessedBy:myPlayerId,guessedAt:serverTimestamp()});
+  if (gameData?.autoHost) {
+    if (phase==='buy_vowel') {
+      await ahApplyVowel(l);
+    } else {
+      await ahApplyGuess(l);
+    }
+    return;
+  }
+  await update(ref(db,'games/'+gameId),{guessedLetter:l,guessedBy:myPlayerId,guessedAt:serverTimestamp()});
 };
 window.submitSolve=async function(){
   const ans=document.getElementById('solveInp').value.trim().toUpperCase();
   if(!ans)return;
-  await update(ref(db,`games/${gameId}`),{solveAttempt:ans,solveBy:myPlayerId,solveAt:serverTimestamp()});
   document.getElementById('solveInp').value='';
+  if (gameData?.autoHost) {
+    await ahCheckSolve(ans);
+    return;
+  }
+  await update(ref(db,'games/'+gameId),{solveAttempt:ans,solveBy:myPlayerId,solveAt:serverTimestamp()});
 };
 window.doBuzz=async function(){playBuzz();await update(ref(db,`games/${gameId}`),{buzzedBy:myPlayerId,buzzedAt:serverTimestamp()});toast('Buzzed in! 🔔');};
 window.useWildcard=async function(){
