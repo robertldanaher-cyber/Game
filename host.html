@@ -303,6 +303,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
       <strong style="color:var(--gold);">Auto Host:</strong> Puzzles picked automatically from the bank. Active player spins and guesses from their phone. No host device required after game launches.
     </div>
     <button class="btn btn-gold btn-full" style="margin-top:6px" onclick="createGame()">CREATE GAME</button>
+    <!-- Saved game banner -- shown on refresh if sessionStorage has a code -->
+    <div id="savedGameBanner" style="display:none;background:rgba(245,197,24,.1);border:1.5px solid rgba(245,197,24,.35);border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+      <div style="font-size:12px;color:var(--gold);font-weight:800;margin-bottom:4px;">🔄 Resume previous game?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Game code: <strong id="savedGameCode" style="color:var(--text);letter-spacing:3px;"></strong></div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-gold btn-sm" style="flex:1;" onclick="resumeSavedGame()">Resume Game</button>
+        <button class="btn btn-ghost btn-sm" onclick="dismissSavedBanner()">Dismiss</button>
+      </div>
+    </div>
+
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
       <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Rejoin Existing Game</div>
       <div style="display:flex;gap:6px;">
@@ -702,6 +712,33 @@ try {
 }
 
 // Monitor Firebase connection state
+// ── SAVED GAME BANNER (shown on refresh) ──
+function showRejoinBanner(code) {
+  const banner = document.getElementById('savedGameBanner');
+  const codeEl = document.getElementById('savedGameCode');
+  if (!banner || !codeEl) {
+    // DOM not ready -- retry
+    setTimeout(() => showRejoinBanner(code), 300);
+    return;
+  }
+  codeEl.textContent = code;
+  banner.style.display = 'block';
+  // Also pre-fill the manual input
+  const inp = document.getElementById('rejoinCodeInp');
+  if (inp) inp.value = code;
+}
+
+window.resumeSavedGame = async function() {
+  document.getElementById('savedGameBanner').style.display = 'none';
+  await hostReconnect();
+};
+
+window.dismissSavedBanner = function() {
+  document.getElementById('savedGameBanner').style.display = 'none';
+  try { sessionStorage.removeItem('wom_host_gameId'); } catch(e) {}
+};
+
+
 function monitorConnection() {
   if (!db) return;
   const connRef = ref(db, '.info/connected');
@@ -711,16 +748,17 @@ function monitorConnection() {
       el.textContent = '🟢 Firebase connected';
       el.className = 'fb-ok';
       // Auto-reconnect if we have a saved game
-      // Auto-reconnect from sessionStorage if no game active
-      try {
-        const saved = sessionStorage.getItem('wom_host_gameId');
-        if (saved && !gameId) {
-          // Pre-fill the rejoin input and trigger reconnect
-          const inp = document.getElementById('rejoinCodeInp');
-          if (inp) inp.value = saved;
-          setTimeout(() => hostReconnect(), 300);
-        }
-      } catch(e) {}
+      // Auto-reconnect from sessionStorage -- only once, only if no active game
+      if (!gameId && !window._ahAutoReconnectDone) {
+        window._ahAutoReconnectDone = true;
+        try {
+          const saved = sessionStorage.getItem('wom_host_gameId');
+          if (saved) {
+            // Show a visible banner prompting rejoin
+            showRejoinBanner(saved);
+          }
+        } catch(e) {}
+      }
     } else {
       el.textContent = '🔴 Firebase disconnected';
       el.className = 'fb-err';
