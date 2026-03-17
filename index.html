@@ -206,6 +206,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .drink-log-time{flex-shrink:0;font-size:10px;min-width:38px;}
 .drink-log-msg{flex:1;color:var(--text);}
 
+/* Player identity bar */
+.identity-bar{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:460px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:8px;}
+.identity-name{font-size:14px;font-weight:800;}
+.identity-btns{display:flex;gap:6px;}
+.identity-btn{padding:4px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
+.identity-btn:hover{border-color:var(--red);color:var(--red);}
+
 /* Buzz button */
 .buzz-btn{width:100%;max-width:460px;padding:20px;background:var(--red);border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:#fff;cursor:pointer;margin-bottom:8px;animation:buzzP .7s infinite alternate;display:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .buzz-btn.show{display:block;}
@@ -356,6 +363,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   <!-- GAME -->
   <div id="sGame" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
     <div class="logo" style="font-size:22px;margin-top:6px;margin-bottom:4px;">🎡 WHEEL OF MISFORTUNE</div>
+    <!-- Identity bar: who you are + leave button -->
+    <div class="identity-bar" id="identityBar">
+      <div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:1px;">Playing as</div>
+        <div class="identity-name" id="identityName">---</div>
+      </div>
+      <div class="identity-btns">
+        <button class="identity-btn" onclick="leaveGame()">Leave Game</button>
+      </div>
+    </div>
     <!-- Spin wheel overlay -- shows during spin, board always visible behind -->
     <div class="spin-wheel-wrap" id="spinWheelWrap" onclick="document.getElementById('spinWheelWrap').classList.remove('show')">
       <div class="spin-wheel-label">🎡 SPINNING!</div>
@@ -791,6 +808,8 @@ function saveSession(){
 function enterLobby(name){
   document.getElementById('lobbyCode').textContent=gameId;
   document.getElementById('yourNameDisp').textContent=name;
+  // Ensure session is saved before subscribing (Firebase may fire immediately)
+  saveSession();
   show('sLobby');
   onValue(ref(db,'games/'+gameId),snap=>{if(!snap.exists())return;gameData=snap.val();handleState(gameData);});
 }
@@ -846,7 +865,8 @@ window.rejoinAsPlayer=async function(playerId){
   if(rejoinGameData.status==='lobby'){
     enterLobby(myName);
   } else {
-    // Subscribe and jump straight into the game
+    // Save session BEFORE subscribing so myPlayerId is available when Firebase fires
+    saveSession();
     document.getElementById('lobbyCode').textContent=gameId;
     document.getElementById('yourNameDisp').textContent=myName;
     show('sLobby');
@@ -1157,6 +1177,12 @@ async function ahStartNextRound(g) {
 // --- RENDER GAME ---
 function renderGame(g){
   updateFreePlayBadge(g); // Fix 12
+  // Update identity bar
+  const myEntry = g.players?.[myPlayerId];
+  if(myEntry) {
+    const nameEl = document.getElementById('identityName');
+    if(nameEl) nameEl.textContent = (myEntry.avatar||'') + ' ' + myEntry.name;
+  }
   document.getElementById('rndType').textContent=rtLabel(g.roundType);
   document.getElementById('jpPill').textContent=`🏆 $${g.jackpot||0}`;
   document.getElementById('catVal').textContent=(g.currentCategory||'---').toUpperCase();
@@ -1635,6 +1661,22 @@ window.submitSolve=async function(){
   }
   await update(ref(db,'games/'+gameId),{solveAttempt:ans,solveBy:myPlayerId,solveAt:serverTimestamp()});
 };
+window.leaveGame = function() {
+  if (!confirm('Leave this game? You can rejoin with the same code.')) return;
+  // Clear session
+  try { sessionStorage.clear(); } catch(e) {}
+  gameId=null; myPlayerId=null; myName=null;
+  // Show join screen
+  show('sJoin');
+  document.getElementById('nameInp').value='';
+  document.getElementById('codeInp').value='';
+  document.getElementById('codeInp').readOnly=false;
+  document.getElementById('codeInp').style.borderColor='';
+  const note=document.getElementById('codeNote');
+  if(note) note.style.display='none';
+  toast('Left game. Enter a new code to rejoin.');
+};
+
 window.doBuzz=async function(){playBuzz();await update(ref(db,`games/${gameId}`),{buzzedBy:myPlayerId,buzzedAt:serverTimestamp()});toast('Buzzed in! 🔔');};
 window.useWildcard=async function(){
   await update(ref(db,`games/${gameId}`),{[`players/${myPlayerId}/wildcard`]:false,wildcardUsedBy:myPlayerId,wildcardUsedAt:serverTimestamp()});
