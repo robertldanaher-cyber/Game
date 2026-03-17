@@ -1257,41 +1257,58 @@ function renderScoreboard(g){
 
 // --- TURN UI ---
 function renderTurnUI(g){
-  // Recover myPlayerId from sessionStorage if somehow lost
+  // Always try to recover myPlayerId
   if(!myPlayerId){
     try{ myPlayerId=sessionStorage.getItem('wom_playerId')||null; }catch(e){}
   }
-  const isMyTurn = !!myPlayerId && g.currentTurnPlayerId===myPlayerId;
-  const phase=g.turnPhase||'spin';
-  const spinVal=g.currentSpinValue;
-  const isTossup=g.roundType==='tossup';
-  const myPlayer=g.players?.[myPlayerId];
-  const hasWC=myPlayer?.wildcard||false;
 
-  document.getElementById('yourTurnHdr').classList.toggle('hidden',!isMyTurn||isTossup);
-  document.getElementById('waitHdr').classList.toggle('hidden',isMyTurn||isTossup);
-  document.getElementById('actionPanel').classList.toggle('hidden',!isMyTurn||isTossup);
+  const phase = g.turnPhase || 'spin';
+  const spinVal = g.currentSpinValue;
+  const isTossup = g.roundType === 'tossup';
+  const isSpeedUp = g.roundType === 'speedup';
 
-  if(!isMyTurn&&g.players?.[g.currentTurnPlayerId])
-    document.getElementById('waitName').textContent=g.players[g.currentTurnPlayerId].name;
-  // Show who we think we are (debug -- remove after testing)
-  const myEntry = g.players?.[myPlayerId];
-  if(myEntry) document.getElementById('yourNameDisp').textContent=myEntry.name;
+  // Am I a known player in this game?
+  const knownPlayer = myPlayerId && g.players?.[myPlayerId];
+  const isMyTurn = !!knownPlayer && g.currentTurnPlayerId === myPlayerId;
 
-  // Spin bubble
+  // Update identity bar
+  if(knownPlayer) {
+    const nameEl = document.getElementById('identityName');
+    if(nameEl) nameEl.textContent = (knownPlayer.avatar||'') + ' ' + knownPlayer.name;
+  }
+
+  // Turn header
+  document.getElementById('yourTurnHdr').classList.toggle('hidden', !isMyTurn || isTossup);
+  document.getElementById('waitHdr').classList.toggle('hidden', isMyTurn || isTossup);
+
+  // Wait header -- show whose turn it is
+  if(!isMyTurn && g.players?.[g.currentTurnPlayerId]) {
+    document.getElementById('waitName').textContent = g.players[g.currentTurnPlayerId].name + "'s turn";
+  }
+
+  // If not my turn -- hide action panel and return
+  if(!isMyTurn || isTossup) {
+    document.getElementById('actionPanel').classList.add('hidden');
+    return;
+  }
+
+  // It IS my turn -- always show action panel
+  document.getElementById('actionPanel').classList.remove('hidden');
+
+  // Spin result bubble -- show when we have a spin value
   const bubble=document.getElementById('spinBubble');
-  if(isMyTurn&&spinVal!==null&&spinVal!==undefined&&phase==='guess_consonant'){
+  if(spinVal!==null&&spinVal!==undefined&&phase==='guess_consonant'){
     bubble.classList.remove('hidden');
     if(typeof spinVal==='number'){
-      document.getElementById('spinVal').textContent=`${spinVal} PTS`;
+      document.getElementById('spinVal').textContent=spinVal+' PTS';
       document.getElementById('spinVal').style.color='var(--gold)';
       document.getElementById('spinSub').textContent='Now pick a consonant!';
     } else {
-      const sv={bankrupt:{v:'BANKRUPT 💀',c:'var(--red)',s:'You lost your round points!'},
-        loseaturn:{v:'LOSE A TURN >>|',c:'var(--muted)',s:'Turn passes to next player.'},
-        sip:{v:'SIP 🍺',c:'var(--amber)',s:'Take a sip  --  then pick a consonant.'},
-        chug:{v:'CHUG 🍻',c:'var(--red)',s:'Chug your drink!'},
-        shot:{v:'TAKE A SHOT 🥃',c:'var(--blue)',s:'Pour and take a shot!'}};
+      const sv={bankrupt:{v:'BANKRUPT!',c:'var(--red)',s:'You lost your round points!'},
+        loseaturn:{v:'LOSE A TURN',c:'var(--muted)',s:'Turn passes.'},
+        sip:{v:'SIP!',c:'var(--amber)',s:'Take a sip -- then pick a consonant.'},
+        chug:{v:'CHUG!',c:'var(--red)',s:'Chug your drink!'},
+        shot:{v:'SHOT!',c:'var(--blue)',s:'Take a shot!'}};
       const s=sv[spinVal]||{v:String(spinVal).toUpperCase(),c:'var(--text)',s:''};
       document.getElementById('spinVal').textContent=s.v;
       document.getElementById('spinVal').style.color=s.c;
@@ -1299,18 +1316,18 @@ function renderTurnUI(g){
     }
   } else {bubble.classList.add('hidden');}
 
-  if(!isMyTurn||isTossup)return;
-
-  const isSpeedUp=g.roundType==='speedup';
-  // Fix 5: in speed-up, check if this player has already used their one guess
+  // Speed-up one-guess tracking
   const speedUpGuessed=g.speedUpGuessed||{};
   const alreadyGuessedSpeedUp=isSpeedUp&&!!speedUpGuessed[myPlayerId];
+  const myPlayer=g.players?.[myPlayerId];
+  const hasWC=myPlayer?.wildcard||false;
 
-  // In speed-up after guessing: show solve-only, no keyboard, no spin, no vowel
-  const showCons=!alreadyGuessedSpeedUp&&phase==='guess_consonant'&&typeof spinVal==='number';
-  const showVowel=!isSpeedUp&&phase==='buy_vowel'; // no vowel buying in speed-up
-  const showSolve=phase==='solve'||(alreadyGuessedSpeedUp&&phase==='guess_consonant');
-  const showMain=!showCons&&!showVowel&&!showSolve;
+  // What to show based on phase
+  const showCons = !alreadyGuessedSpeedUp && phase==='guess_consonant' && typeof spinVal==='number';
+  const showVowel = !isSpeedUp && phase==='buy_vowel';
+  const showSolve = phase==='solve' || (alreadyGuessedSpeedUp && phase==='guess_consonant');
+  // Main buttons show when: spin phase, OR after spin result but before guessing
+  const showMain = phase==='spin' || (!showCons && !showVowel && !showSolve);
 
   document.getElementById('mainBtns').style.display=showMain?'flex':'none';
   document.getElementById('kbConsonant').classList.toggle('hidden',!showCons);
@@ -1322,17 +1339,17 @@ function renderTurnUI(g){
   if(showVowel)buildKB(g,'vowel');
 
   // In speed-up: spin/vowel/solve buttons locked except solve after guessing
-  document.getElementById('btnSpin').disabled=phase!=='spin'||isSpeedUp;
-  document.getElementById('btnVowel').disabled=(myPlayer?.roundScore||0)<50||phase!=='spin'||isSpeedUp;
-  document.getElementById('btnSolve').disabled=isSpeedUp?false:phase!=='spin';
+  const myScore = myPlayer?.roundScore || 0;
+  document.getElementById('btnSpin').disabled = phase!=='spin' || isSpeedUp;
+  document.getElementById('btnVowel').disabled = myScore<50 || phase!=='spin' || isSpeedUp;
+  document.getElementById('btnSolve').disabled = false; // always allow solve attempt
 
-  document.getElementById('yturnSub').textContent=
-    alreadyGuessedSpeedUp?'You guessed  --  now try to solve the puzzle!':
-    showCons?`Speed-Up: ${spinVal} pts per letter  --  ONE guess only!`:
-    showVowel?'Choose a vowel to reveal (costs 50 pts)':
-    showSolve?'Type the complete puzzle solution!':
-    isSpeedUp?'Speed-Up  --  guess ONE consonant or solve!':
-    'Spin the wheel, buy a vowel, or solve the puzzle!';
+  document.getElementById('yturnSub').textContent =
+    alreadyGuessedSpeedUp ? 'You guessed -- now try to solve!' :
+    showCons ? 'Pick a consonant! (' + spinVal + ' pts x letters)' :
+    showVowel ? 'Choose a vowel to reveal (costs 50 pts)' :
+    showSolve ? 'Type the complete puzzle solution!' :
+    'Spin the wheel, buy a vowel, or try to solve!';
 }
 
 function buildKB(g,mode){
@@ -1623,13 +1640,19 @@ async function ahHandleSolve(winnerId) {
 window.requestSpin=async function(){
   getACtx();
   if (gameData?.autoHost && gameData.currentTurnPlayerId === myPlayerId) {
-    // Auto Host: spin locally and apply result directly
+    // Auto Host: show wheel animation immediately, then apply result
+    startPlayerSpin(4500 + Math.random()*1500, gameData?.players?.[myPlayerId]?.name || '');
     const wedge = ahSpin();
-    await ahApplySpin(wedge);
+    setTimeout(() => ahApplySpin(wedge), 500); // slight delay so animation starts
     return;
   }
-  // Normal mode: request spin from host
-  await update(ref(db,'games/'+gameId),{spinRequested:serverTimestamp(),spinRequestBy:myPlayerId});
+  // Normal mode: show wheel animation + request spin from host
+  startPlayerSpin(4500 + Math.random()*1500, gameData?.players?.[myPlayerId]?.name || '');
+  await update(ref(db,'games/'+gameId),{
+    spinRequested:serverTimestamp(),
+    spinRequestBy:myPlayerId,
+    spinSignal:{ts:Date.now(), duration:4500}
+  });
 };
 window.startBuyVowel=async function(){await update(ref(db,'games/'+gameId),{turnPhase:'buy_vowel'});};
 window.cancelVowel=async function(){await update(ref(db,`games/${gameId}`),{turnPhase:'spin',currentSpinValue:null});};
