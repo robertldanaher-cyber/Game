@@ -169,8 +169,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 
 /* Fix 11: category vote on player screen */
 .cat-vote-wrap{display:none!important;} /* replaced by modal */
-.cat-vote-overlay{position:fixed;inset:0;background:rgba(7,7,20,.95);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;animation:fadeInPop .3s ease;}
-.cat-vote-overlay.show{display:flex;}
+.cat-vote-overlay{position:fixed;inset:0;background:rgba(7,7,20,.95);z-index:550;display:none;align-items:center;justify-content:center;padding:20px;}
+.cat-vote-overlay.show{display:flex;animation:fadeInPop .3s ease;}
 @keyframes fadeInPop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
 .cat-vote-modal{background:var(--surface);border:2px solid rgba(52,152,219,.5);border-radius:20px;padding:24px;width:100%;max-width:420px;}
 .cat-vote-title{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--blue);letter-spacing:3px;text-align:center;margin-bottom:4px;}
@@ -973,17 +973,23 @@ function checkCategoryVote(g) {
     return;
   }
 
-  // Show modal whenever vote is active -- re-render if new session
+  // Show modal -- re-render on new session
   const isNewSession = cv.ts !== catVoteTs;
   if (isNewSession) {
     catVoteTs = cv.ts;
     myVoteIdx = null;
     catVoteActive = true;
+  }
+  // Always render options if not voted yet
+  if (myVoteIdx === null) {
     const doneEl = document.getElementById('catVoteDone');
     const optsEl = document.getElementById('catVoteOpts');
     if (doneEl) doneEl.classList.add('hidden');
-    if (optsEl) { optsEl.style.display = 'flex'; optsEl.innerHTML = ''; }
-    renderVoteOptions(cv.options);
+    if (optsEl) optsEl.style.display = 'flex';
+    if (isNewSession) renderVoteOptions(cv.options);
+  }
+  // Timer bar on new session
+  if (isNewSession) {
     const fill = document.getElementById('cvTimerFill');
     if (fill) { fill.style.transition = 'none'; fill.style.width = '100%'; }
     setTimeout(() => {
@@ -991,10 +997,8 @@ function checkCategoryVote(g) {
     }, 50);
     try { playBuzz(); } catch(e) {}
   }
-  // Always ensure overlay is visible when vote is active
-  if (!overlay.classList.contains('show')) {
-    overlay.classList.add('show');
-  }
+  // Always show overlay
+  overlay.classList.add('show');
 
   // Update countdown
   const elapsed = Math.floor((Date.now() - cv.ts) / 1000);
@@ -1006,8 +1010,12 @@ function checkCategoryVote(g) {
 function renderVoteOptions(options) {
   const optsEl = document.getElementById('catVoteOpts');
   if (!optsEl) return;
-  optsEl.innerHTML = (options || []).map((opt, i) =>
-    `<div class="cat-opt" id="catOpt_${i}" onclick="submitCatVote(${i})">${opt}</div>`
+  if (!options || !options.length) {
+    optsEl.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">No options received</div>';
+    return;
+  }
+  optsEl.innerHTML = options.map((opt, i) =>
+    '<div class="cat-opt" id="catOpt_' + i + '" onclick="window.submitCatVote(' + i + ')">' + opt + '</div>'
   ).join('');
 }
 
