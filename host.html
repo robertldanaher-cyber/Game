@@ -57,18 +57,20 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 .form-row .inp,.form-row .sel{flex:1;}
 
 /* Board */
-.board-wrap{margin-bottom:14px;}
-.cat-banner{background:linear-gradient(135deg,#1a1a4a,#0d0d28);border:1px solid rgba(245,197,24,.3);border-radius:8px 8px 0 0;padding:8px 16px;text-align:center;}
+.board-outer{background:linear-gradient(180deg,#c8a420,#f5c518 30%,#e8b800 60%,#c8a420);border-radius:10px;padding:4px;box-shadow:0 0 0 2px #8a6f00,0 0 18px rgba(245,197,24,.3),0 4px 20px rgba(0,0,0,.6);margin-bottom:14px;}
+.board-inner{background:#050510;border-radius:7px;overflow:hidden;box-shadow:inset 0 0 30px rgba(0,20,80,.8);}
+.board-wrap{margin-bottom:0;}
+.cat-banner{background:linear-gradient(135deg,#070720,#0d0d40);border-bottom:2px solid rgba(100,160,255,.3);padding:8px 16px;text-align:center;}
 .cat-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 .cat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);letter-spacing:2px;}
 .board-grid{background:#080816;border:1px solid rgba(245,197,24,.14);border-top:none;border-radius:0 0 8px 8px;padding:10px 8px;display:flex;flex-direction:column;gap:5px;}
 .board-row{display:flex;justify-content:center;gap:4px;}
 .tile{width:32px;height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;flex-shrink:0;transition:all .3s;}
-.tile-letter{background:var(--tile-off);border:1px solid var(--tile-border);color:transparent;}
+.tile-letter{background:#0a0a20;border:1px solid rgba(60,80,160,.5);box-shadow:inset 0 0 6px rgba(0,0,50,.8);color:transparent;}
 /* Host sees all letters always (#6) */
 .tile-letter.host-visible{background:var(--surface3);border-color:rgba(245,197,24,.2);color:rgba(245,197,24,.4);}
-.tile-letter.revealed{background:var(--tile-on);border-color:#c49a10;color:#1a0a00;animation:tileReveal .4s ease;}
-.tile-letter.solved{background:#fff8e0;border-color:#c49a10;color:#1a0a00;}
+.tile-letter.revealed{background:linear-gradient(180deg,#fffbe8,#f5e680);border:1px solid #c8a420;color:#1a0800;font-weight:900;box-shadow:0 0 8px rgba(245,210,24,.5);animation:tileReveal .35s ease;}
+.tile-letter.solved{background:linear-gradient(180deg,#fffbe8,#f5e680);border:1px solid #c8a420;color:#1a0800;font-weight:900;box-shadow:0 0 6px rgba(245,210,24,.35);}
 .tile-space{background:transparent;border:none;}
 @keyframes tileReveal{0%{transform:scaleY(0);background:var(--gold)}55%{background:#ffe566}100%{transform:scaleY(1);background:var(--tile-on)}}
 
@@ -513,9 +515,15 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
   </div>
 
   <!-- Board (#6 host always sees letters) -->
-  <div class="board-wrap" id="boardWrap" style="display:none;">
-    <div class="cat-banner"><div class="cat-lbl">Category</div><div class="cat-val" id="hostCatVal">---</div></div>
-    <div class="board-grid" id="hostBoardGrid"></div>
+  <div class="board-outer" id="boardWrap" style="display:none;">
+    <div class="board-inner">
+      <div class="cat-banner">
+        <div class="cat-lbl" style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(150,180,255,.6);">Category</div>
+        <div class="cat-val" id="hostCatVal" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-shadow:0 0 12px rgba(120,180,255,.8);">---</div>
+      </div>
+      <div class="board-grid" id="hostBoardGrid"></div>
+      <div class="word-lengths" id="hostWordLengths" style="display:flex;justify-content:center;flex-wrap:wrap;gap:5px;padding:5px 8px 8px;"></div>
+    </div>
   </div>
 
   <!-- Used letters -->
@@ -785,19 +793,31 @@ function playApplause(){const a=ac();if(!a)return;for(let i=0;i<40;i++)setTimeou
 function playWrong(){const a=ac();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type='square';o.connect(g);g.connect(a.destination);o.frequency.setValueAtTime(220,a.currentTime);o.frequency.setValueAtTime(160,a.currentTime+.18);g.gain.setValueAtTime(.3,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.45);o.start();o.stop(a.currentTime+.45);}catch(e){}}
 
 // --- WEDGES (#9 Wildcard) ---
-const WEDGES=[
-  {label:'300',val:300,color:'#E24B4A'},{label:'450',val:450,color:'#F5C518'},
-  {label:'BANKRUPT',val:'bankrupt',color:'#1a1a2e'},{label:'500',val:500,color:'#27ae60'},
-  {label:'SIP 🍺',val:'sip',color:'#e67e22'},{label:'350',val:350,color:'#2980b9'},
-  {label:'200',val:200,color:'#8e44ad'},{label:'LOSE TURN',val:'loseaturn',color:'#2c3e50'},
-  {label:'400',val:400,color:'#16a085'},{label:'CHUG 🍻',val:'chug',color:'#c0392b'},
-  {label:'250',val:250,color:'#f39c12'},{label:'500',val:500,color:'#27ae60'},
-  {label:'WILDCARD 🃏',val:'wildcard',color:'#6c3483'},{label:'BANKRUPT',val:'bankrupt',color:'#1a1a2e'},
-  {label:'150',val:150,color:'#1abc9c'},{label:'400',val:400,color:'#e67e22'},
-  {label:'SIP 🍺',val:'sip',color:'#e67e22'},{label:'300',val:300,color:'#E24B4A'},
-  {label:'SHOT 🥃',val:'shot',color:'#2980b9'},{label:'450',val:450,color:'#2ecc71'},
-  {label:'200',val:200,color:'#e74c3c'},{label:'CHUG 🍻',val:'chug',color:'#c0392b'},
-  {label:'350',val:350,color:'#f1c40f'},{label:'500',val:500,color:'#8e44ad'},
+const WEDGES = [
+  {label:'YOU DRINK',   val:'youdrink',  color:'#c0392b', desc:'Spinner takes 3 sips!'},
+  {label:'400',         val:400,         color:'#2980b9'},
+  {label:'GIVE 2',      val:'give2',     color:'#e67e22', desc:'Pick 2 people to drink!'},
+  {label:'300',         val:300,         color:'#27ae60'},
+  {label:'WATERFALL',   val:'waterfall', color:'#8e44ad', desc:'Everyone drinks -- you cannot stop until the person to your right stops!'},
+  {label:'500',         val:500,         color:'#F5C518'},
+  {label:'NEVER HAVE I',val:'neverhavei',color:'#d35400', desc:'Say "Never have I ever..." -- anyone who HAS must drink!'},
+  {label:'250',         val:250,         color:'#16a085'},
+  {label:'EVERYONE',    val:'everyone',  color:'#e74c3c', desc:'Everyone takes a sip!'},
+  {label:'450',         val:450,         color:'#2ecc71'},
+  {label:'NEW RULE',    val:'newrule',   color:'#6c3483', desc:'Make a rule! Lasts until someone else lands here. Ideas: speak in an accent, no first names, drink with left hand only.'},
+  {label:'350',         val:350,         color:'#3498db'},
+  {label:'RHYME TIME',  val:'rhymetime', color:'#1abc9c', desc:'Say a word -- go around rhyming. First to fail or hesitate drinks!'},
+  {label:'400',         val:400,         color:'#e67e22'},
+  {label:'FINISH IT',   val:'finishit',  color:'#922b21', desc:'FINISH YOUR DRINK!'},
+  {label:'500',         val:500,         color:'#27ae60'},
+  {label:'TAKE 5',      val:'take5',     color:'#f39c12', desc:'Take 5 drinks -- or chug for 5 seconds!'},
+  {label:'300',         val:300,         color:'#8e44ad'},
+  {label:'SOCIAL POST', val:'socialpost',color:'#2c3e50', desc:'Post something embarrassing on social media -- group approves the post first!'},
+  {label:'500',         val:500,         color:'#2980b9'},
+  {label:'SHOTS!',      val:'shots',     color:'#c0392b', desc:'Shots for everyone -- you are buying the next round!'},
+  {label:'350',         val:350,         color:'#1abc9c'},
+  {label:'WILDCARD',    val:'wildcard',  color:'#6c3483', desc:'Free consonant -- no spin needed!'},
+  {label:'BANKRUPT',    val:'bankrupt',  color:'#0d0d1a', desc:'Lose all round points and CHUG!'},
 ];
 
 const VOWELS=new Set(['A','E','I','O','U']);
@@ -814,20 +834,51 @@ document.getElementById('wedgeList').innerHTML=WEDGES.map(w=>`<span style="displ
 // --- DRAW WHEEL ---
 function drawWheel(angle=0){
   const cv=document.getElementById('wheelCanvas'),ctx=cv.getContext('2d');
-  const cx=260,cy=260,r=252,arc=(2*Math.PI)/WEDGES.length;
+  const cx=260,cy=260,r=252,n=WEDGES.length,arc=(2*Math.PI)/n;
   ctx.clearRect(0,0,520,520);
   WEDGES.forEach((w,i)=>{
     const s=angle+i*arc-Math.PI/2,e=s+arc;
+    // Wedge fill
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
-    ctx.fillStyle=w.color;ctx.fill();ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=1.5;ctx.stroke();
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(s+arc/2);ctx.textAlign='right';
-    ctx.fillStyle='#fff';ctx.font='bold 12px Nunito,sans-serif';
-    ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=3;
-    ctx.fillText(w.label,r-10,5);ctx.restore();
+    ctx.fillStyle=w.color;ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=2;ctx.stroke();
+    // Text
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(s+arc/2);
+    ctx.textAlign='right';
+    ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=4;
+    const isChallenge=isNaN(w.val)&&w.val!=='bankrupt'&&w.val!=='wildcard';
+    const isPoints=typeof w.val==='number';
+    if(isPoints){
+      // Big bold number
+      ctx.fillStyle='#fff';
+      ctx.font='bold 22px Nunito,sans-serif';
+      ctx.fillText(w.val,r-14,7);
+      ctx.font='bold 10px Nunito,sans-serif';
+      ctx.fillStyle='rgba(255,255,255,.75)';
+      ctx.fillText('PTS',r-14,19);
+    } else {
+      // Challenge -- split label across two lines if needed
+      const words=w.label.split(' ');
+      const mid=Math.ceil(words.length/2);
+      const line1=words.slice(0,mid).join(' ');
+      const line2=words.slice(mid).join(' ');
+      ctx.fillStyle='#fff';
+      if(line2){
+        ctx.font='bold 13px Nunito,sans-serif';
+        ctx.fillText(line1,r-12,-4);
+        ctx.fillText(line2,r-12,11);
+      } else {
+        ctx.font='bold 14px Nunito,sans-serif';
+        ctx.fillText(line1,r-12,5);
+      }
+    }
+    ctx.restore();
   });
-  ctx.beginPath();ctx.arc(cx,cy,28,0,2*Math.PI);ctx.fillStyle='#07070f';ctx.fill();
+  // Center hub
+  ctx.beginPath();ctx.arc(cx,cy,30,0,2*Math.PI);
+  ctx.fillStyle='#07070f';ctx.fill();
   ctx.strokeStyle='#F5C518';ctx.lineWidth=3;ctx.stroke();
-  ctx.fillStyle='#F5C518';ctx.font='bold 12px Nunito';ctx.textAlign='center';ctx.shadowBlur=0;
+  ctx.fillStyle='#F5C518';ctx.font='bold 11px Nunito';ctx.textAlign='center';ctx.shadowBlur=0;
   ctx.fillText('WOM',cx,cy+4);
 }
 drawWheel(0);
@@ -1102,6 +1153,12 @@ window.hostSpin=function(){
   if(gameData.turnPhase!=='spin')return;
   triggerSpin();
 };
+
+
+function getWedgeDesc(val) {
+  const w = WEDGES.find(function(w){ return w.val === val; });
+  return (w && w.desc) ? w.desc : '';
+}
 
 async function handleSpinResult(wedge){
   if(!gameData)return;
@@ -2738,12 +2795,18 @@ function renderHostBoard(g){
   if(!puzzle){grid.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:14px;">Waiting for puzzle...</div>';return;}
   const words=puzzle.trim().split(/\s+/);
   const rows=buildRows(words,14);
-  grid.innerHTML=rows.map(row=>`<div class="board-row">${row.map(ch=>{
-    if(ch===' ')return`<div class="tile tile-space"></div>`;
+  grid.innerHTML=rows.map(function(row){return'<div class="board-row">'+row.map(function(ch){
+    if(ch===' ')return'<div class="tile tile-space"></div>';
     const show=solved||revealed.has(ch);
-    // Host always sees letters dimly (#6)
-    return`<div class="tile tile-letter ${show?(solved?'solved':'revealed'):'host-visible'}">${ch}</div>`;
-  }).join('')}</div>`).join('');
+    return'<div class="tile tile-letter '+(show?(solved?'solved':'revealed'):'host-visible')+'">'+ch+'</div>';
+  }).join('')+'</div>';}).join('');
+  // Word length indicators
+  const wlEl=document.getElementById('hostWordLengths');
+  if(wlEl){
+    wlEl.innerHTML=puzzle.trim().split(/\s+/).map(function(w){
+      return'<span style="font-size:9px;font-family:Nunito,sans-serif;font-weight:800;color:rgba(150,180,255,.5);letter-spacing:1px;background:rgba(60,80,160,.15);border:1px solid rgba(60,80,160,.2);border-radius:3px;padding:1px 5px;">'+w.length+'</span>';
+    }).join('<span style="color:rgba(100,130,255,.25);font-size:10px;">&#183;</span>');
+  }
 }
 
 function buildRows(words,cols){
