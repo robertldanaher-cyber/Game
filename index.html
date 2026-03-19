@@ -600,6 +600,34 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Nu
 <div class="toast" id="toast"></div>
 
 <script src="firebase-config.js"></script>
+<script>
+// Fallback: hide connecting overlay after 6s even if module fails to load
+// Runs outside module scope so CDN slowness can't block it
+(function() {
+  var attempts = 0;
+  var check = setInterval(function() {
+    attempts++;
+    var overlay = document.getElementById('connOverlay');
+    var app = document.getElementById('mainApp');
+    if (!overlay || !app) return;
+    // Module loaded and hid overlay already -- stop
+    if (overlay.style.display === 'none') { clearInterval(check); return; }
+    // Timeout -- module is slow or failed
+    if (attempts >= 12) { // 6 seconds (12 x 500ms)
+      clearInterval(check);
+      overlay.innerHTML = '<div style="text-align:center;padding:30px 20px;">' +
+        '<div style="font-size:32px;margin-bottom:12px;">!</div>' +
+        '<div style="font-size:15px;font-weight:800;color:#E24B4A;margin-bottom:8px;">Connection Failed</div>' +
+        '<div style="font-size:13px;color:#999;max-width:280px;margin:0 auto;line-height:1.7;">' +
+        'Could not connect to Firebase. Check your internet connection and try reloading.' +
+        '</div>' +
+        '<button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#F5C518;color:#000;border:none;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer;">Reload</button>' +
+        '</div>';
+    }
+  }, 500);
+})();
+</script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
@@ -622,7 +650,8 @@ try {
     '</div>' +
     '<div style="font-size:11px;color:#666;margin-top:12px;">' + e.message + '</div>' +
     '</div>';
-  throw e; // stop execution
+  // Don't throw -- let module continue so overlay hide still fires
+  // db will be null and Firebase calls are guarded
 }
 
 // Stars
@@ -796,7 +825,10 @@ document.addEventListener('touchstart', iosAudioUnlock, { once: true });
 document.addEventListener('click', iosAudioUnlock, { once: true });
 
 // Boot
-setTimeout(()=>{document.getElementById('connOverlay').style.display='none';document.getElementById('mainApp').style.display='flex';
+setTimeout(()=>{
+  document.getElementById('connOverlay').style.display='none';
+  document.getElementById('mainApp').style.display='flex';
+  if(!db){show('sJoin');return;} // Firebase not available -- show join with error
   // Auto-reconnect only if game is still active
   if(gameId&&myPlayerId&&myName){
     get(ref(db,'games/'+gameId)).then(snap=>{
